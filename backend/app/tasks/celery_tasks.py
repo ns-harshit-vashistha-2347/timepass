@@ -5,7 +5,12 @@ import traceback
 
 @celery_app.task(name="run_research")
 def run_research_task(session_id: str, topic: str):
-    asyncio.run(_async_research(session_id, topic))
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(_async_research(session_id, topic))
+    finally:
+        loop.close()
 
 
 async def _async_research(session_id: str, topic: str):

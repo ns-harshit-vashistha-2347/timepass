@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
-const HUB_POSITION = { x: 120, y: 320 }
-const RESEARCH_POSITION = { x: 850, y: 260 }
+const HUB_POSITION = { x: 140, y: 350 }       
+const RESEARCH_POSITION = { x: 780, y: 320 } 
 
 export const useStore = create((set, get) => ({
 
@@ -13,22 +13,26 @@ export const useStore = create((set, get) => ({
   agents: [],
 
   setAgents: (agents) => {
-    const enhancedAgents = agents.map((agent, index) => ({
-      ...agent,
+    const currentAgents = get().agents  // get existing state
+    const isResearching = get().isResearching
 
-      x: HUB_POSITION.x + (index % 3) * 30,
-      y: HUB_POSITION.y + Math.floor(index / 3) * 30,
+    // If a mission is active, don't reset positions
+    if (isResearching) return
 
-      targetX: HUB_POSITION.x,
-      targetY: HUB_POSITION.y,
-
-      currentZone: 'hub',
-      isMoving: false,
-      isWorking: false,
-
-      animationState: 'idle'
-    }))
-
+    const enhancedAgents = agents.map((agent, index) => {
+      const existing = currentAgents.find(a => a.id === agent.id)
+      return {
+        ...agent,
+        x: existing?.x ?? HUB_POSITION.x + (index % 3) * 30,
+        y: existing?.y ?? HUB_POSITION.y + Math.floor(index / 3) * 30,
+        targetX: existing?.targetX ?? HUB_POSITION.x,
+        targetY: existing?.targetY ?? HUB_POSITION.y,
+        currentZone: existing?.currentZone ?? 'hub',
+        isMoving: existing?.isMoving ?? false,
+        isWorking: existing?.isWorking ?? false,
+        animationState: existing?.animationState ?? 'idle'
+      }
+    })
     set({ agents: enhancedAgents })
   },
 

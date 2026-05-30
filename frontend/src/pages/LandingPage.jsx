@@ -27,8 +27,8 @@ export default function LandingPage({ onEnter }) {
       <div className="absolute inset-0"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px)
+            linear-gradient(rgba(168,85,247,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(168,85,247,0.03) 1px, transparent 1px)
           `,
           backgroundSize: '40px 40px'
         }}
@@ -36,7 +36,7 @@ export default function LandingPage({ onEnter }) {
 
       {/* Glow orb */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%)' }}
+        style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 70%)' }}
       />
 
       <div className="relative z-10 text-center max-w-2xl px-8">
@@ -46,7 +46,7 @@ export default function LandingPage({ onEnter }) {
         </div>
 
         <h1 className="font-display text-6xl font-black mb-2 leading-none"
-          style={{ color: '#00d4ff', textShadow: '0 0 30px rgba(0,212,255,0.4)' }}>
+          style={{ color: '#a855f7', textShadow: '0 0 30px rgba(168,85,247,0.4)' }}>
           CYBER
         </h1>
         <h1 className="font-display text-6xl font-black mb-8 leading-none text-white">
@@ -77,10 +77,10 @@ export default function LandingPage({ onEnter }) {
           disabled={loading}
           className="group relative px-10 py-4 font-display text-sm tracking-widest font-bold uppercase transition-all duration-300"
           style={{
-            background: loading ? 'transparent' : 'rgba(0,212,255,0.08)',
-            border: '1px solid rgba(0,212,255,0.4)',
-            color: '#00d4ff',
-            boxShadow: loading ? 'none' : '0 0 20px rgba(0,212,255,0.15)',
+            background: loading ? 'transparent' : 'rgba(168,85,247,0.08)',
+            border: '1px solid rgba(168,85,247,0.4)',
+            color: '#a855f7',
+            boxShadow: loading ? 'none' : '0 0 20px rgba(168,85,247,0.15)',
           }}
         >
           {loading ? (

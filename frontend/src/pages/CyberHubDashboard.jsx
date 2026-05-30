@@ -28,7 +28,9 @@ export default function CyberHubDashboard() {
 
     addActivity('Cyber Hub initialized.')
 
-    const interval = setInterval(loadAgents, 5000)
+    const interval = setInterval(() => {
+      if (!isResearching) loadAgents()  // skip refresh during active mission
+    }, 5000)
 
     return () => clearInterval(interval)
 
@@ -38,15 +40,15 @@ export default function CyberHubDashboard() {
     <div className="min-h-screen bg-[#050a0f] text-white overflow-hidden">
 
       {/* TopBar */}
-      <header className="h-16 border-b border-cyan-500/20 flex items-center justify-between px-6">
+      <header className="h-16 border-b border-violet-500/20 flex items-center justify-between px-6">
 
         <div>
-          <div className="text-cyan-400 font-black text-2xl tracking-[0.4em]">
+          <div className="text-violet-400 font-black text-2xl tracking-[0.4em]">
             CYBER HUB
           </div>
         </div>
 
-        <div className="text-sm text-cyan-200">
+        <div className="text-sm text-violet-200">
           Operator: {user?.name}
         </div>
 
@@ -60,11 +62,11 @@ export default function CyberHubDashboard() {
         </div>
 
         {/* RIGHT */}
-        <div className="border-l border-cyan-500/20 overflow-y-auto">
+        <div className="border-l border-violet-500/20 overflow-y-auto">
 
           <ResearchAreaPanel />
 
-          <div className="border-t border-cyan-500/10">
+          <div className="border-t border-violet-500/10">
             <ActivityLog />
           </div>
 

@@ -187,7 +187,7 @@ export default function ResearchAreaPanel() {
       {/* HEADER */}
       <div className="mb-6">
 
-        <div className="text-xs uppercase tracking-[0.4em] text-cyan-400 mb-2">
+        <div className="text-xs uppercase tracking-[0.4em] text-violet-400 mb-2">
           RESEARCH COMMAND
         </div>
 
@@ -195,7 +195,7 @@ export default function ResearchAreaPanel() {
           OPERATIONS PANEL
         </h1>
 
-        <p className="text-cyan-200/70 text-sm mt-3 leading-relaxed">
+        <p className="text-violet-200/70 text-sm mt-3 leading-relaxed">
           Deploy autonomous AI agents into the Research Lab.
           Agents will investigate, collaborate, synthesize findings,
           and return with a final intelligence report.
@@ -204,9 +204,9 @@ export default function ResearchAreaPanel() {
       </div>
 
       {/* INPUT PANEL */}
-      <div className="border border-cyan-500/20 rounded-2xl p-5 bg-cyan-500/[0.03] backdrop-blur-sm mb-6">
+      <div className="border border-violet-500/20 rounded-2xl p-5 bg-violet-500/[0.03] backdrop-blur-sm mb-6">
 
-        <div className="text-xs uppercase tracking-[0.3em] text-cyan-400 mb-3">
+        <div className="text-xs uppercase tracking-[0.3em] text-violet-400 mb-3">
           Mission Topic
         </div>
 
@@ -220,22 +220,22 @@ export default function ResearchAreaPanel() {
             w-full
             bg-black/30
             border
-            border-cyan-500/10
+            border-violet-500/10
             rounded-xl
             p-4
             text-sm
-            text-cyan-100
-            placeholder:text-cyan-200/30
+            text-violet-100
+            placeholder:text-violet-200/30
             outline-none
             resize-none
-            focus:border-cyan-400/40
+            focus:border-violet-400/40
             transition-all
           "
         />
 
         <div className="flex items-center justify-between mt-4">
 
-          <div className="text-xs text-cyan-300/50">
+          <div className="text-xs text-violet-300/50">
             CTRL + ENTER to deploy agents
           </div>
 
@@ -255,17 +255,17 @@ export default function ResearchAreaPanel() {
             style={{
               background: isResearching
                 ? 'rgba(255,255,255,0.03)'
-                : 'rgba(0,212,255,0.08)',
+                : 'rgba(168,85,247,0.08)',
 
-              border: '1px solid rgba(0,212,255,0.3)',
+              border: '1px solid rgba(168,85,247,0.3)',
 
               color: isResearching
                 ? '#5a7188'
-                : '#00d4ff',
+                : '#a855f7',
 
               boxShadow: isResearching
                 ? 'none'
-                : '0 0 20px rgba(0,212,255,0.15)'
+                : '0 0 20px rgba(168,85,247,0.15)'
             }}
           >
 
@@ -286,7 +286,7 @@ export default function ResearchAreaPanel() {
           className="
             mb-6
             border
-            border-cyan-500/20
+            border-violet-500/20
             rounded-xl
             p-4
             flex
@@ -313,7 +313,7 @@ export default function ResearchAreaPanel() {
             `}
           />
 
-          <div className="text-sm text-cyan-100">
+          <div className="text-sm text-violet-100">
             {STATUS_MESSAGES[sessionStatus]}
           </div>
 
@@ -326,7 +326,7 @@ export default function ResearchAreaPanel() {
 
         <div className="mb-6">
 
-          <div className="text-xs uppercase tracking-[0.3em] text-cyan-400 mb-3">
+          <div className="text-xs uppercase tracking-[0.3em] text-violet-400 mb-3">
             Active Agents
           </div>
 
@@ -338,20 +338,20 @@ export default function ResearchAreaPanel() {
                 key={agent.id}
                 className="
                   border
-                  border-cyan-500/20
+                  border-violet-500/20
                   rounded-xl
                   px-4
                   py-2
-                  bg-cyan-500/[0.03]
+                  bg-violet-500/[0.03]
                   text-xs
                 "
               >
 
-                <div className="text-cyan-300 font-semibold">
+                <div className="text-violet-300 font-semibold">
                   {agent.name}
                 </div>
 
-                <div className="text-cyan-100/50 mt-1">
+                <div className="text-violet-100/50 mt-1">
                   {agent.role}
                 </div>
 
@@ -391,14 +391,14 @@ export default function ResearchAreaPanel() {
         <div
           className="
             border
-            border-cyan-500/20
+            border-violet-500/20
             rounded-2xl
             p-6
-            bg-cyan-500/[0.02]
+            bg-violet-500/[0.02]
           "
         >
 
-          <div className="text-xs uppercase tracking-[0.4em] text-cyan-400 mb-6">
+          <div className="text-xs uppercase tracking-[0.4em] text-violet-400 mb-6">
             FINAL INTELLIGENCE REPORT
           </div>
 
@@ -408,13 +408,13 @@ export default function ResearchAreaPanel() {
               components={{
 
                 h1: ({ children }) => (
-                  <h1 className="text-2xl text-cyan-300 font-black mb-5">
+                  <h1 className="text-2xl text-violet-300 font-black mb-5">
                     {children}
                   </h1>
                 ),
 
                 h2: ({ children }) => (
-                  <h2 className="text-xl text-cyan-200 font-bold mt-8 mb-4">
+                  <h2 className="text-xl text-violet-200 font-bold mt-8 mb-4">
                     {children}
                   </h2>
                 ),
@@ -426,13 +426,13 @@ export default function ResearchAreaPanel() {
                 ),
 
                 p: ({ children }) => (
-                  <p className="text-cyan-100/90 leading-relaxed mb-4">
+                  <p className="text-violet-100/90 leading-relaxed mb-4">
                     {children}
                   </p>
                 ),
 
                 li: ({ children }) => (
-                  <li className="text-cyan-100/90 mb-2">
+                  <li className="text-violet-100/90 mb-2">
                     {children}
                   </li>
                 ),

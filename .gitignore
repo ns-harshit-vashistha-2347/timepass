@@ -195,4 +195,3 @@ staticfiles/
 wandb/
 mlruns/
 checkpoints/
-models/

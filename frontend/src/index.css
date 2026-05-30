@@ -5,20 +5,20 @@
 * { box-sizing: border-box; }
 
 body {
-  background-color: #050a0f;
-  color: #a8c8e8;
+  background-color: #080510;  /* was #050a0f */
+  color: #c9b8e8;             /* was #a8c8e8 */
 }
 
 /* Scrollbar styling */
 ::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #050a0f; }
-::-webkit-scrollbar-thumb { background: #0d2137; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #00d4ff33; }
+::-webkit-scrollbar-track { background: #080510; }
+::-webkit-scrollbar-thumb { background: #2a1a45; }           /* was #0d2137 */
+::-webkit-scrollbar-thumb:hover { background: #a855f733; }
 
 /* Glowing border utility */
 .glow-border {
-  border: 1px solid #00d4ff33;
-  box-shadow: 0 0 8px #00d4ff11, inset 0 0 8px #00d4ff08;
+  border: 1px solid #a855f733;                                /* was #a855f733 */
+  box-shadow: 0 0 8px #a855f711, inset 0 0 8px #a855f708;    /* was cyan */
 }
 
 /* Grid scan line effect */
@@ -30,8 +30,8 @@ body {
     0deg,
     transparent,
     transparent 2px,
-    rgba(0, 212, 255, 0.01) 2px,
-    rgba(0, 212, 255, 0.01) 4px
+    rgba(168, 85, 247, 0.01) 2px,
+    rgba(168, 85, 247, 0.01) 4px
   );
   pointer-events: none;
 }
@@ -44,7 +44,7 @@ body {
 .cursor::after {
   content: '▌';
   animation: blink 1s step-end infinite;
-  color: #00d4ff;
+  color: #a855f7;
 }
 
 
@@ -68,7 +68,17 @@ body {
 
 .cyber-glow {
   box-shadow:
-    0 0 10px rgba(0,212,255,0.2),
-    0 0 20px rgba(0,212,255,0.15),
-    0 0 30px rgba(0,212,255,0.1);
+    0 0 10px rgba(168,85,247,0.2),
+    0 0 20px rgba(168,85,247,0.15),
+    0 0 30px rgba(168,85,247,0.1);
+}
+
+@keyframes scanDown {
+  0%   { top: 0%; }
+  100% { top: 100%; }
+}
+
+@keyframes dashFlow {
+  0%   { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -28; }
 }

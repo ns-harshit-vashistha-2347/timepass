@@ -9,16 +9,15 @@ export default {
       },
       colors: {
         cyber: {
-          bg:      '#050a0f',
-          panel:   '#0a1628',
-          border:  '#0d2137',
-          accent:  '#00d4ff',
-          green:   '#00ff88',
-          yellow:  '#ffd700',
-          red:     '#ff4444',
-          muted:   '#3a5a7a',
-          text:    '#a8c8e8',
-        }
+        bg:     '#080510',
+        text:   '#c9b8e8',
+        muted:  '#5c4d7a',
+        accent: '#a855f7',
+        green:  '#34d399',
+        yellow: '#fbbf24',
+        red:    '#f87171',
+        border: '#2a1a45',
+      }
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -27,8 +26,8 @@ export default {
       },
       keyframes: {
         glow: {
-          '0%':   { textShadow: '0 0 4px #00d4ff' },
-          '100%': { textShadow: '0 0 16px #00d4ff, 0 0 32px #00d4ff' },
+          '0%':   { textShadow: '0 0 4px #a855f7' },
+          '100%': { textShadow: '0 0 16px #a855f7, 0 0 32px #a855f7' },
         },
         scan: {
           '0%':   { transform: 'translateY(-100%)' },
