@@ -9,9 +9,9 @@ const GROUND_Y = 490   // y where building bases sit
 
 // Building definitions — all have (y + h) === GROUND_Y
 const B = {
-  hub:      { x: 30,   y: 190, w: 180, h: 300, color: '#00e5ff', dim: '#0a3a4a', label: 'AGENT HUB',    floors: 3 },
+  hub:      { x: 30,   y: 190, w: 180, h: 300, color: '#4f46e5', dim: '#0a3a4a', label: 'AGENT HUB',    floors: 3 },
   enquiry:  { x: 455,  y: 140, w: 210, h: 350, color: '#ffaa00', dim: '#5a3a08', label: 'ENQUIRY DEPT', floors: 4 },
-  research: { x: 840,  y: 205, w: 170, h: 285, color: '#00e5ff', dim: '#0a3a4a', label: 'RESEARCH LAB', floors: 3 },
+  research: { x: 840,  y: 205, w: 170, h: 285, color: '#4f46e5', dim: '#0a3a4a', label: 'RESEARCH LAB', floors: 3 },
   dev:      { x: 1022, y: 248, w: 150, h: 242, color: '#4d9fff', dim: '#0a2a4a', label: 'DEV HUB',      floors: 3 },
 }
 
@@ -65,13 +65,13 @@ function useAnimatedAgents(agents) {
 const SKILL_COLOR = {
   junior: '#34d399',
   mid:    '#60a5fa',
-  senior: '#00e5ff',
+  senior: '#4f46e5',
   expert: '#fbbf24',
 }
 
 // ─── Agent character ─────────────────────────────────────────────────────────
 function AgentNode({ x, y, agent, tick }) {
-  const color   = SKILL_COLOR[agent.skill_level] || '#00e5ff'
+  const color   = SKILL_COLOR[agent.skill_level] || '#4f46e5'
   const walking = agent.animationState === 'walking'
   const working = agent.animationState === 'working'
   const bobY    = walking ? Math.sin(tick * 0.22) * 3.5
@@ -364,14 +364,14 @@ function Roads({ isActive, activeHubs, tick }) {
 
       {/* ── Active flow lines ── */}
       {isActive && (
-        <Line points={r1} stroke="#00e5ff" strokeWidth={2.5}
+        <Line points={r1} stroke="#4f46e5" strokeWidth={2.5}
           dash={[16, 10]} dashOffset={off} opacity={0.85} lineCap="round"
-          shadowColor="#00e5ff" shadowBlur={10} shadowOpacity={0.8} />
+          shadowColor="#4f46e5" shadowBlur={10} shadowOpacity={0.8} />
       )}
       {resActive && (
-        <Line points={r2} stroke="#00e5ff" strokeWidth={2.5}
+        <Line points={r2} stroke="#4f46e5" strokeWidth={2.5}
           dash={[16, 10]} dashOffset={off} opacity={0.85} lineCap="round"
-          shadowColor="#00e5ff" shadowBlur={10} shadowOpacity={0.8} />
+          shadowColor="#4f46e5" shadowBlur={10} shadowOpacity={0.8} />
       )}
       {devActive && (
         <Line points={r3} stroke="#60a5fa" strokeWidth={2.5}
@@ -382,8 +382,8 @@ function Roads({ isActive, activeHubs, tick }) {
       {/* Fork junction dot */}
       {isActive && (resActive || devActive) && (
         <Circle x={B.enquiry.x + B.enquiry.w + 10} y={ry} radius={5}
-          fill="#00e5ff"
-          shadowColor="#00e5ff" shadowBlur={12} shadowOpacity={0.9} />
+          fill="#4f46e5"
+          shadowColor="#4f46e5" shadowBlur={12} shadowOpacity={0.9} />
       )}
     </Group>
   )
@@ -539,35 +539,35 @@ export default function SimulationWorld() {
       {selectedZone && (
         <div className="absolute inset-0 bg-black/65 backdrop-blur-sm z-40 flex items-end"
           onClick={() => setSelectedZone(null)}>
-          <div className="w-full p-5 rounded-t-2xl border-t border-cyan-500/25"
+          <div className="w-full p-5 rounded-t-2xl border-t border-indigo-500/25"
             style={{ background: '#0c0820' }}
             onClick={e => e.stopPropagation()}>
 
             <div className="flex justify-between items-start mb-4">
               <div>
-                <div className="text-[10px] tracking-[0.35em] text-cyan-400/60 mb-1">ZONE DETAIL</div>
+                <div className="text-[10px] tracking-[0.35em] text-indigo-400/60 mb-1">ZONE DETAIL</div>
                 <div className="text-white font-black text-lg tracking-wider">{selectedZone.name}</div>
-                <div className="text-cyan-400/50 text-xs mt-0.5">
+                <div className="text-indigo-400/50 text-xs mt-0.5">
                   {selectedZone.agents.length} agent{selectedZone.agents.length !== 1 ? 's' : ''} present
                 </div>
               </div>
               <button onClick={() => setSelectedZone(null)}
-                className="text-cyan-400/60 hover:text-white text-lg">✕</button>
+                className="text-indigo-400/60 hover:text-white text-lg">✕</button>
             </div>
 
             {selectedZone.agents.length === 0 ? (
-              <div className="text-cyan-400/35 text-sm text-center py-5">No agents in this zone</div>
+              <div className="text-indigo-400/35 text-sm text-center py-5">No agents in this zone</div>
             ) : (
               <div className="flex gap-5 overflow-x-auto pb-2">
                 {selectedZone.agents.map(agent => {
-                  const c = SKILL_COLOR[agent.skill_level] || '#00e5ff'
+                  const c = SKILL_COLOR[agent.skill_level] || '#4f46e5'
                   return (
                     <div key={agent.id} className="flex flex-col items-center gap-2 flex-shrink-0 min-w-[76px]">
                       <div className="w-13 h-13 rounded-xl flex items-center justify-center text-2xl w-14 h-14"
                         style={{ background: `${c}12`, border: `1px solid ${c}30` }}>🤖</div>
                       <div className="text-center">
                         <div className="text-xs text-white font-semibold">{agent.name?.split(' ')[0]}</div>
-                        <div className="text-[10px] text-cyan-400/65">{agent.role}</div>
+                        <div className="text-[10px] text-indigo-400/65">{agent.role}</div>
                         <div className="mt-1 text-[9px] px-2 py-0.5 rounded-full inline-block"
                           style={{
                             background: agent.animationState === 'working' ? '#34d39918' : `${c}18`,

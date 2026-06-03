@@ -13,7 +13,7 @@ export default function MovementPath({ isResearching }) {
 
       {/* Base road — always visible, dim */}
       <line x1="280" y1="330" x2="720" y2="300"
-        stroke="rgba(0,229,255,0.1)"
+        stroke="rgba(79,70,229,0.08)"
         strokeWidth="8"
         strokeLinecap="round"
       />

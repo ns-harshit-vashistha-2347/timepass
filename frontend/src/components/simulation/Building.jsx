@@ -1,6 +1,6 @@
 export default function Building({ title, subtitle, x, y, width, height, color, isActive, onClick }) {
 
-  const primary = color === 'violet' ? '#00e5ff' : '#7c3aed'
+  const primary = color === 'violet' ? '#4f46e5' : '#7c3aed'
   const glow = `${primary}44`
 
   return (

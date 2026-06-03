@@ -4,6 +4,7 @@ import operator
 
 from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, SystemMessage
+from langgraph import graph
 from langgraph.graph import StateGraph, END, START
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,7 +24,8 @@ class ResearchState(TypedDict):
     agents_needed: list[dict]           
     spawned_agents: list[Agent]        
     research_pieces: Annotated[list[str], operator.add]
-    final_report: str                  
+    final_report: str            
+    collab_result: str       
     db: object 
 
 
@@ -73,34 +75,49 @@ async def spawn_agents_node(state: ResearchState) -> dict:
 
 
 async def research_node(state: ResearchState) -> dict:
+    from app.utils.tools import RESEARCH_TOOLS, run_with_tools
+
     llm = get_llm()
     pieces = []
 
     for i, agent in enumerate(state["spawned_agents"]):
-        focus = state["agents_needed"][i].get("focus", state["topic"]) if i < len(state["agents_needed"]) else state["topic"]
+        focus = (
+            state["agents_needed"][i].get("focus", state["topic"])
+            if i < len(state["agents_needed"])
+            else state["topic"]
+        )
 
         system_prompt = agent_hub.get_agent_system_prompt(agent)
 
-        response = await llm.ainvoke([
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=f"""
-                Research Plan: {state['plan']}
-                Your specific focus: {focus}
-                Overall topic: {state['topic']}
-                
-                Provide a detailed, well-structured research piece on your focus area.
-                Be thorough. Use sections. Include key facts, insights, and conclusions.
+        messages = [
+            SystemMessage(content=system_prompt + """
+            You have access to tools: web_search and search_arxiv.
+            Use them only if you need current information or research papers to do your job well.
+            You do NOT have to use them — use your judgement.
+            After gathering any needed information, write your research piece.
+            """),
+                        HumanMessage(content=f"""
+            Research Plan: {state['plan']}
+            Your specific focus: {focus}
+            Overall topic: {state['topic']}
+
+            {f"Additional context from Developer Hub: {state['collab_result']}" if state.get('collab_result') else ""}
+
+            Provide a detailed, well-structured research piece on your focus area.
+            Use tools if you need up-to-date information or papers.
+            Be thorough. Use sections. Include key facts and conclusions.
             """)
-        ])
+        ]
 
-        pieces.append(f"## {agent.name} ({agent.role})\n{response.content}")
-
+        content = await run_with_tools(llm, RESEARCH_TOOLS, messages)
+        pieces.append(f"## {agent.name} ({agent.role})\n{content}")
         agent.status = AgentStatus.busy
 
     return {"research_pieces": pieces}
 
 
 async def synthesize_node(state: ResearchState) -> dict:
+
     llm = get_llm()
 
     combined = "\n\n".join(state["research_pieces"])
@@ -130,16 +147,51 @@ async def synthesize_node(state: ResearchState) -> dict:
     return {"final_report": response.content}
 
 
+async def collab_check_node(state: ResearchState) -> dict:
+    """Ask PM if Developer Hub help is needed before starting research."""
+    from app.utils.agents_extras import request_collab
+    import json
+
+    llm = get_llm()
+    response = await llm.ainvoke([
+        SystemMessage(content="""You are a Research Major at Cyber Hub.
+        Decide if this research task needs help from the Developer Hub.
+        Developer Hub helps with: code, APIs, technical architecture, software tools.
+        Respond ONLY in JSON: {"needs_help": true/false, "reason": "one sentence", "help_needed": "specific question"}"""),
+                HumanMessage(content=f"Topic: {state['topic']}\nPlan: {state['plan']}")
+    ])
+
+    try:
+        decision = json.loads(response.content.strip())
+    except Exception:
+        return {"collab_result": ""}
+
+    if not decision.get("needs_help", False):
+        return {"collab_result": ""}
+
+    result = await request_collab(
+        requesting_hub="research",
+        target_hub="developer",
+        reason=decision["reason"],
+        help_needed=decision["help_needed"],
+        parent_session_id=state["session_id"],
+        db=state["db"],
+    )
+    return {"collab_result": result}
+
+
 def build_research_graph():
     graph = StateGraph(ResearchState)
 
     graph.add_node("major_planning", major_planning_node)
     graph.add_node("spawn_agents", spawn_agents_node)
+    graph.add_node("collab_check", collab_check_node)
     graph.add_node("research", research_node)
     graph.add_node("synthesize", synthesize_node)
 
     graph.add_edge(START, "major_planning")
-    graph.add_edge("major_planning", "spawn_agents")
+    graph.add_edge("major_planning", "collab_check")
+    graph.add_edge("collab_check", "spawn_agents")
     graph.add_edge("spawn_agents", "research")
     graph.add_edge("research", "synthesize")
     graph.add_edge("synthesize", END)

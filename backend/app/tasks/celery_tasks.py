@@ -11,12 +11,10 @@ from app.tasks.celery_app import celery_app
 
 @celery_app.task(name="run_research")
 def run_research_task(session_id: str, query: str):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(_async_research(session_id, query))
-    finally:
-        loop.close()
+        asyncio.run(_async_research(session_id, query))
+    except Exception:
+        raise
 
 
 async def _async_research(session_id: str, topic: str):
@@ -37,14 +35,15 @@ async def _async_research(session_id: str, topic: str):
             await db.commit()
 
             final_state = await research_graph.ainvoke({
-                "topic":          topic,
-                "session_id":     session_id,
-                "plan":           "",
-                "agents_needed":  [],
+                "topic": topic,
+                "session_id": session_id,
+                "plan": "",
+                "agents_needed": [],
                 "spawned_agents": [],
                 "research_pieces": [],
-                "final_report":   "",
-                "db":             db,
+                "final_report": "",
+                "collab_result": "",  
+                "db": db,
             })
 
             session.result = final_state["final_report"]
@@ -71,12 +70,10 @@ async def _async_research(session_id: str, topic: str):
 
 @celery_app.task(name="run_developer")
 def run_developer_task(session_id: str, query: str):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(_async_developer(session_id, query))
-    finally:
-        loop.close()
+        asyncio.run(_async_developer(session_id, query))
+    except Exception:
+        raise
 
 
 async def _async_developer(session_id: str, query: str):
@@ -103,14 +100,15 @@ async def _async_developer(session_id: str, query: str):
             await db.commit()
 
             final_state = await developer_graph.ainvoke({
-                "query":          query,
-                "session_id":     session_id,
-                "plan":           "",
-                "agents_needed":  [],
+                "query": query,
+                "session_id": session_id,
+                "plan": "",
+                "agents_needed": [],
                 "spawned_agents": [],
-                "work_pieces":    [],
-                "final_output":   "",
-                "db":             db,
+                "work_pieces": [],
+                "final_output": "",
+                "collab_result": "",   
+                "db": db,
             })
 
             session.result = final_state["final_output"]

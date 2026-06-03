@@ -18,30 +18,30 @@ const HUB_MSG = {
 }
 
 // ─── Markdown renderer ───────────────────────────────────────────────────────
-function MdResult({ content }) {
+function MdResult({ content, light }) {
+  const text = light ? 'text-slate-700' : 'text-indigo-100/80'
+  const head1 = light ? 'text-indigo-700' : 'text-indigo-300'
+  const head2 = light ? 'text-indigo-600' : 'text-indigo-200'
+  const head3 = light ? 'text-slate-800' : 'text-white'
+  const codeBg = light ? 'bg-slate-100 text-indigo-700' : 'bg-violet-900/30 text-indigo-300'
+  const preBg = light ? 'bg-slate-50 border-slate-200' : 'bg-black/40 border-indigo-500/15'
+
   return (
     <ReactMarkdown components={{
-      h1: ({ children }) => <h1 className="text-lg text-cyan-300 font-black mb-3 mt-1">{children}</h1>,
-      h2: ({ children }) => <h2 className="text-base text-cyan-200 font-bold mt-5 mb-2">{children}</h2>,
-      h3: ({ children }) => <h3 className="text-sm text-white font-semibold mt-4 mb-2">{children}</h3>,
-      p:  ({ children }) => <p  className="text-cyan-100/80 text-sm leading-relaxed mb-3">{children}</p>,
-      li: ({ children }) => <li className="text-cyan-100/80 text-sm mb-1">{children}</li>,
-      strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
-      code: ({ children }) => (
-        <code className="bg-violet-900/30 text-cyan-300 px-1.5 py-0.5 rounded text-xs font-mono">
-          {children}
-        </code>
-      ),
-      pre: ({ children }) => (
-        <pre className="bg-black/40 border border-cyan-500/15 rounded-lg p-3 overflow-x-auto text-xs mb-3">
-          {children}
-        </pre>
-      ),
+      h1: ({ children }) => <h1 className={`text-xl ${head1} font-black mb-3 mt-1`}>{children}</h1>,
+      h2: ({ children }) => <h2 className={`text-lg ${head2} font-bold mt-5 mb-2`}>{children}</h2>,
+      h3: ({ children }) => <h3 className={`text-base ${head3} font-semibold mt-4 mb-2`}>{children}</h3>,
+      p:  ({ children }) => <p  className={`${text} text-sm leading-relaxed mb-3`}>{children}</p>,
+      li: ({ children }) => <li className={`${text} text-sm mb-1`}>{children}</li>,
+      strong: ({ children }) => <strong className={light ? 'text-slate-900 font-semibold' : 'text-white font-semibold'}>{children}</strong>,
+      code: ({ children }) => <code className={`${codeBg} px-1.5 py-0.5 rounded text-xs font-mono`}>{children}</code>,
+      pre: ({ children }) => <pre className={`${preBg} border rounded-lg p-3 overflow-x-auto text-xs mb-3`}>{children}</pre>,
     }}>
       {content}
     </ReactMarkdown>
   )
 }
+
 
 // ─── Hub result card ─────────────────────────────────────────────────────────
 function ResultCard({ title, color, borderColor, result, status, onViewFull }) {
@@ -74,8 +74,42 @@ function ResultCard({ title, color, borderColor, result, status, onViewFull }) {
   )
 }
 
+
+function ResultModal({ title, content, color, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+      onClick={onClose}>
+      <div className="w-full max-w-4xl max-h-[85vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden"
+        style={{ background: '#ffffff', border: `2px solid ${color}40` }}
+        onClick={e => e.stopPropagation()}>
+
+        {/* Modal header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b"
+          style={{ borderColor: `${color}25`, background: `${color}08` }}>
+          <div>
+            <div className="text-[10px] tracking-[0.3em] font-bold mb-0.5"
+              style={{ color }}>{title}</div>
+            <div className="text-xs text-slate-400">Click outside to close</div>
+          </div>
+          <button onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all">
+            ✕
+          </button>
+        </div>
+
+        {/* Modal scrollable content */}
+        <div className="flex-1 overflow-y-auto px-8 py-6">
+          <MdResult content={content} light />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 // ─── Main panel ──────────────────────────────────────────────────────────────
-export default function OperationsPanel() {
+export default function OperationsPanel({ onResultsReady }) {
   const user               = useStore(s => s.user)
   const isActive           = useStore(s => s.isActive)
   const setIsActive        = useStore(s => s.setIsActive)
@@ -104,6 +138,7 @@ export default function OperationsPanel() {
   const [researchStatus, setResearchStatus] = useState(null)
   const [devStatus, setDevStatus]     = useState(null)
   const [error, setError]             = useState(null)
+  const [modal, setModal] = useState(null)
 
   const enqPoll = useRef(null)
   const resPoll = useRef(null)
@@ -143,7 +178,7 @@ export default function OperationsPanel() {
           clearInterval(resPoll.current)
           setResearchResult(data.result)
           addActivity('Research Lab: Report complete ✅')
-          setTab('RESEARCH')
+          if (onResultsReady) onResultsReady()   // ← ADD THIS
           checkDone(hubs, data.result, useStore.getState().devResult)
         }
         if (data.status === 'failed') {
@@ -166,6 +201,7 @@ export default function OperationsPanel() {
           clearInterval(devPoll.current)
           setDevResult(data.result)
           addActivity('Dev Hub: Work complete ✅')
+          if (onResultsReady) onResultsReady() 
           if (!useStore.getState().researchResult) setTab('DEVELOPER')
           checkDone(hubs, useStore.getState().researchResult, data.result)
         }
@@ -270,19 +306,19 @@ export default function OperationsPanel() {
     <div className="flex flex-col h-full text-white" style={{ fontFamily: '"JetBrains Mono", monospace' }}>
 
       {/* Header */}
-      <div className="px-5 pt-4 pb-3 border-b border-cyan-500/15" style={{ background: '#08041a' }}>
-        <div className="text-[9px] tracking-[0.45em] text-cyan-400/55 mb-1">COMMAND CENTER</div>
+      <div className="px-5 pt-4 pb-3 border-b border-indigo-500/15" style={{ background: '#ffffff' }}>
+        <div className="text-[9px] tracking-[0.45em] text-indigo-400/55 mb-1">COMMAND CENTER</div>
         <div className="text-lg font-black tracking-[0.18em] text-white">OPERATIONS PANEL</div>
       </div>
 
       {/* Tab bar */}
-      <div className="flex border-b border-cyan-500/12" style={{ background: '#06031a' }}>
-        {['ENQUIRY', 'RESEARCH', 'DEVELOPER'].map(t => (
+      <div className="flex border-b border-indigo-500/12" style={{ background: '#f8fafc' }}>
+        {['ENQUIRY'].map(t => (
           <button key={t} onClick={() => setTab(t)}
             className="flex-1 relative py-2.5 text-[9px] font-bold tracking-[0.25em] transition-all"
             style={{
-              color: tab === t ? '#00e5ff' : '#3d2a5a',
-              borderBottom: tab === t ? '2px solid #00e5ff' : '2px solid transparent',
+              color: tab === t ? '#4f46e5' : '#94a3b8',
+              borderBottom: tab === t ? '2px solid #4f46e5' : '2px solid transparent',
               background: tab === t ? 'rgba(0,229,255,0.04)' : 'transparent',
             }}>
             {t}
@@ -298,16 +334,16 @@ export default function OperationsPanel() {
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto" style={{ background: '#070318' }}>
+      <div className="flex-1 overflow-y-auto" style={{ background: '#f8fafc' }}>
 
         {/* ── ENQUIRY TAB ── */}
         {tab === 'ENQUIRY' && (
           <div className="p-4 space-y-4">
 
             {/* Input */}
-            <div className="border border-cyan-500/18 rounded-xl p-4"
+            <div className="border border-indigo-500/18 rounded-xl p-4"
               style={{ background: 'rgba(0,229,255,0.02)' }}>
-              <div className="text-[9px] tracking-[0.35em] text-cyan-400/60 mb-2.5">QUERY</div>
+              <div className="text-[9px] tracking-[0.35em] text-indigo-400/60 mb-2.5">QUERY</div>
               <textarea
                 value={query}
                 onChange={e => setQuery(e.target.value)}
@@ -315,18 +351,18 @@ export default function OperationsPanel() {
                 rows={4}
                 disabled={isActive}
                 placeholder="Ask anything — research a topic, build an app, analyse data..."
-                className="w-full bg-black/20 border border-cyan-500/10 rounded-lg p-3 text-sm text-cyan-100 placeholder:text-cyan-300/22 outline-none resize-none focus:border-cyan-400/28 transition-all"
+                className="w-full bg-black/20 border border-indigo-500/10 rounded-lg p-3 text-sm text-indigo-100 placeholder:text-indigo-300/22 outline-none resize-none focus:border-indigo-400/28 transition-all"
                 style={{ fontFamily: 'inherit' }}
               />
               <div className="flex items-center justify-between mt-3">
-                <div className="text-[9px] text-cyan-300/35">⌘/CTRL + ENTER to dispatch</div>
+                <div className="text-[9px] text-indigo-300/35">⌘/CTRL + ENTER to dispatch</div>
                 <button onClick={handleSubmit}
                   disabled={isActive || !query.trim()}
                   className="px-5 py-2 rounded-lg text-[10px] font-bold tracking-[0.25em] transition-all"
                   style={{
-                    background: isActive ? 'rgba(255,255,255,0.02)' : 'rgba(0,229,255,0.1)',
-                    border: `1px solid ${isActive ? 'rgba(0,229,255,0.12)' : 'rgba(0,229,255,0.35)'}`,
-                    color:  isActive ? '#3d2a5a' : '#00e5ff',
+                    background: isActive ? 'rgba(255,255,255,0.02)' : 'rgba(79,70,229,0.08)',
+                    border: `1px solid ${isActive ? 'rgba(0,229,255,0.12)' : 'rgba(79,70,229,0.4)'}`,
+                    color:  isActive ? '#94a3b8' : '#4f46e5',
                     boxShadow: isActive ? 'none' : '0 0 16px rgba(0,229,255,0.14)',
                   }}>
                   {isActive ? 'ACTIVE...' : 'DISPATCH'}
@@ -336,14 +372,14 @@ export default function OperationsPanel() {
 
             {/* Enquiry status */}
             {enquiryStatus && (
-              <div className="border border-cyan-500/18 rounded-xl p-3.5 bg-black/18">
+              <div className="border border-indigo-500/18 rounded-xl p-3.5 bg-black/18">
                 <div className="flex items-center gap-2.5 mb-2">
                   <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
                     enquiryStatus === 'dispatched' ? 'bg-green-400'
                     : enquiryStatus === 'failed'   ? 'bg-red-400'
                     : 'bg-amber-400 animate-pulse'
                   }`} />
-                  <div className="text-xs text-cyan-100">{ENQ_MSG[enquiryStatus]}</div>
+                  <div className="text-xs text-indigo-100">{ENQ_MSG[enquiryStatus]}</div>
                 </div>
                 {enquiryHubs.length > 0 && (
                   <div className="flex gap-2 mt-2 flex-wrap">
@@ -351,7 +387,7 @@ export default function OperationsPanel() {
                       <span key={h} className="text-[9px] px-2 py-0.5 rounded-full font-bold"
                         style={{
                           background: h === 'research' ? 'rgba(0,229,255,0.15)' : 'rgba(96,165,250,0.15)',
-                          color:      h === 'research' ? '#00e5ff' : '#60a5fa',
+                          color:      h === 'research' ? '#4f46e5' : '#60a5fa',
                           border: `1px solid ${h === 'research' ? 'rgba(0,229,255,0.3)' : 'rgba(96,165,250,0.3)'}`,
                         }}>
                         {h.toUpperCase()}
@@ -360,7 +396,7 @@ export default function OperationsPanel() {
                   </div>
                 )}
                 {enquiryReasoning && (
-                  <div className="mt-2.5 text-[10px] text-cyan-300/55 italic leading-relaxed">
+                  <div className="mt-2.5 text-[10px] text-indigo-300/55 italic leading-relaxed">
                     "{enquiryReasoning}"
                   </div>
                 )}
@@ -371,14 +407,14 @@ export default function OperationsPanel() {
             {(researchStatus || devStatus) && (
               <div className="space-y-2">
                 {researchStatus && (
-                  <div className="flex items-center gap-2 p-3 rounded-xl border border-cyan-500/14 text-xs">
+                  <div className="flex items-center gap-2 p-3 rounded-xl border border-indigo-500/14 text-xs">
                     <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
                       researchStatus === 'completed' ? 'bg-green-400'
                       : researchStatus === 'failed'  ? 'bg-red-400'
                       : 'bg-cyan-400 animate-pulse'
                     }`} />
-                    <span className="text-cyan-400/60">Research Lab</span>
-                    <span className="text-cyan-200">{HUB_MSG[researchStatus] ?? researchStatus}</span>
+                    <span className="text-indigo-400/60">Research Lab</span>
+                    <span className="text-indigo-200">{HUB_MSG[researchStatus] ?? researchStatus}</span>
                   </div>
                 )}
                 {devStatus && (
@@ -407,11 +443,12 @@ export default function OperationsPanel() {
               <div className="grid grid-cols-2 gap-3">
                 <ResultCard
                   title="RESEARCH"
-                  color="#00e5ff"
+                  color="#4f46e5"
                   borderColor="rgba(0,229,255,0.25)"
                   result={researchResult}
                   status={researchStatus}
-                  onViewFull={() => setTab('RESEARCH')}
+                  onViewFull={() => setModal({ title: 'RESEARCH REPORT', content: researchResult, color: '#6366f1' })}
+
                 />
                 <ResultCard
                   title="DEVELOPER"
@@ -419,7 +456,8 @@ export default function OperationsPanel() {
                   borderColor="rgba(96,165,250,0.25)"
                   result={devResult}
                   status={devStatus}
-                  onViewFull={() => setTab('DEVELOPER')}
+                  onViewFull={() => setModal({ title: 'DEVELOPER OUTPUT', content: devResult, color: '#60a5fa' })}
+
                 />
               </div>
             )}
@@ -429,11 +467,11 @@ export default function OperationsPanel() {
                 {enquiryHubs[0] === 'research' && researchResult && (
                   <ResultCard
                     title="RESEARCH RESULT"
-                    color="#00e5ff"
+                    color="#4f46e5"
                     borderColor="rgba(0,229,255,0.25)"
                     result={researchResult}
                     status={researchStatus}
-                    onViewFull={() => setTab('RESEARCH')}
+                    onViewFull={() => setModal({ title: 'RESEARCH REPORT', content: researchResult, color: '#6366f1' })}
                   />
                 )}
                 {enquiryHubs[0] === 'developer' && devResult && (
@@ -443,7 +481,7 @@ export default function OperationsPanel() {
                     borderColor="rgba(96,165,250,0.25)"
                     result={devResult}
                     status={devStatus}
-                    onViewFull={() => setTab('DEVELOPER')}
+                    onViewFull={() => setModal({ title: 'DEVELOPER OUTPUT', content: devResult, color: '#60a5fa' })}
                   />
                 )}
               </>
@@ -452,45 +490,15 @@ export default function OperationsPanel() {
           </div>
         )}
 
-        {/* ── RESEARCH TAB ── */}
-        {tab === 'RESEARCH' && (
-          <div className="p-4">
-            {!researchResult ? (
-              <div className="text-center py-14">
-                <div className="text-4xl mb-3 opacity-30">🔬</div>
-                <div className="text-cyan-400/40 text-sm">No research results yet</div>
-                <div className="text-cyan-400/25 text-xs mt-1">Submit a query via the Enquiry tab</div>
-              </div>
-            ) : (
-              <div className="border border-cyan-500/18 rounded-xl p-4"
-                style={{ background: 'rgba(0,229,255,0.02)' }}>
-                <div className="text-[9px] tracking-[0.4em] text-cyan-400/60 mb-4">RESEARCH REPORT</div>
-                <MdResult content={researchResult} />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── DEVELOPER TAB ── */}
-        {tab === 'DEVELOPER' && (
-          <div className="p-4">
-            {!devResult ? (
-              <div className="text-center py-14">
-                <div className="text-4xl mb-3 opacity-30">💻</div>
-                <div className="text-blue-400/40 text-sm">No developer output yet</div>
-                <div className="text-blue-400/25 text-xs mt-1">Submit a coding query via the Enquiry tab</div>
-              </div>
-            ) : (
-              <div className="border border-blue-500/18 rounded-xl p-4"
-                style={{ background: 'rgba(96,165,250,0.02)' }}>
-                <div className="text-[9px] tracking-[0.4em] text-blue-400/60 mb-4">DEVELOPER OUTPUT</div>
-                <MdResult content={devResult} />
-              </div>
-            )}
-          </div>
-        )}
-
       </div>
+      {modal && (
+        <ResultModal
+          title={modal.title}
+          content={modal.content}
+          color={modal.color}
+          onClose={() => setModal(null)}
+        />
+      )}
     </div>
   )
 }

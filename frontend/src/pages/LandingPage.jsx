@@ -39,10 +39,10 @@ export default function LandingPage({ onEnter }) {
             background: { color: { value: '#080510' } },
             particles: {
               number: { value: 80 },
-              color: { value: '#00e5ff' },
+              color: { value: '#4f46e5' },
               links: {
                 enable: true,
-                color: '#00e5ff',
+                color: '#4f46e5',
                 opacity: 0.15,
                 distance: 150,
               },
@@ -76,7 +76,7 @@ export default function LandingPage({ onEnter }) {
         </div>
 
         <h1 className="font-display text-6xl font-black mb-2 leading-none"
-          style={{ color: '#00e5ff', textShadow: '0 0 30px rgba(0,229,255,0.5)' }}>
+          style={{ color: '#4f46e5', textShadow: '0 0 30px rgba(0,229,255,0.5)' }}>
           CYBER
         </h1>
         <h1 className="font-display text-6xl font-black mb-8 leading-none text-white">
@@ -109,7 +109,7 @@ export default function LandingPage({ onEnter }) {
           style={{
             background: loading ? 'transparent' : 'rgba(0,229,255,0.08)',
             border: '1px solid rgba(0,229,255,0.4)',
-            color: '#00e5ff',
+            color: '#4f46e5',
             boxShadow: loading ? 'none' : '0 0 20px rgba(0,229,255,0.2)',
           }}
         >

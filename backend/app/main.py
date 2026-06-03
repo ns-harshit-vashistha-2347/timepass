@@ -13,6 +13,8 @@ from app.api.routes.research  import router as research_router
 from app.api.routes.hub       import router as hub_router
 from app.api.routes.developer import router as developer_router
 from app.api.routes.enquiry   import router as enquiry_router
+from app.api.routes.collab import router as collab_router
+
 
 # Import all models so SQLAlchemy registers them before create_all
 import app.models.user
@@ -21,6 +23,7 @@ import app.models.agent
 import app.models.agent_request
 import app.models.dev_session
 import app.models.enquiry_session
+import app.models.collab_request
 
 
 @asynccontextmanager
@@ -55,6 +58,7 @@ app.include_router(enquiry_router)    # smart front-door
 app.include_router(research_router)   # direct research access
 app.include_router(developer_router)  # direct developer access
 app.include_router(hub_router)        # agent hub management
+app.include_router(collab_router)    # collaboration requests between hubs
 
 
 @app.get("/")

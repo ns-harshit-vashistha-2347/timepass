@@ -9,14 +9,14 @@ export default {
       },
       colors: {
         cyber: {
-          bg:     '#020b14',
-          text:   '#a8e6f0',
-          muted:  '#1a4a5a',
-          accent: '#00e5ff',   // was #00e5ff
-          green:  '#00ff88',
-          yellow: '#ffcc00',
-          red:    '#ff3355',
-          border: '#0a2535',
+          bg:     '#f0f4ff',
+          text:   '#1e293b',
+          muted:  '#64748b',
+          accent: '#4f46e5',
+          green:  '#059669',
+          yellow: '#d97706',
+          red:    '#dc2626',
+          border: '#e2e8f0',
         }
       },
       animation: {
@@ -26,8 +26,8 @@ export default {
       },
       keyframes: {
         glow: {
-          '0%':   { textShadow: '0 0 4px #00e5ff' },
-          '100%': { textShadow: '0 0 16px #00e5ff, 0 0 32px #00e5ff' },
+          '0%':   { textShadow: '0 0 4px #4f46e5' },
+          '100%': { textShadow: '0 0 16px #4f46e5, 0 0 32px #4f46e5' },
         },
         scan: {
           '0%':   { transform: 'translateY(-100%)' },

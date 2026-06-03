@@ -4,3 +4,4 @@ from app.models.agent import Agent
 from app.models.user import User
 from app.models.dev_session import DevSession
 from app.models.enquiry_session import EnquirySession
+from app.models.collab_request import CollabRequest
