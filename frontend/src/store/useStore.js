@@ -4,10 +4,10 @@ import { create } from 'zustand'
 // Canvas is 1200x560, ground at y=490
 // Agent walk y = 468 (ground level feet position)
 const POSITIONS = {
-  hub:      { x: 120,  y: 468 },   // center of Agent Hub building
-  enquiry:  { x: 562,  y: 468 },   // center of Enquiry Dept building
-  research: { x: 928,  y: 468 },   // center of Research Lab building
-  dev:      { x: 1100, y: 468 },   // center of Dev Hub building
+  hub:      { x: 140,  y: 462 },
+  enquiry:  { x: 558,  y: 462 },
+  research: { x: 922,  y: 462 },
+  dev:      { x: 1092, y: 462 },
 }
 
 export const useStore = create((set, get) => ({
@@ -21,14 +21,15 @@ export const useStore = create((set, get) => ({
 
   setAgents: (agents) => {
     const current = get().agents
-    if (get().isActive) return   // never overwrite positions mid-mission
+    const isActive = get().isActive
+    if (isActive) return  
 
     const enhanced = agents.map((agent, i) => {
       const existing = current.find(a => a.id === agent.id)
       const col = i % 3
       const row = Math.floor(i / 3)
-      const spawnX = POSITIONS.hub.x + col * 32 - 32
-      const spawnY = POSITIONS.hub.y - row * 22
+      const spawnX = POSITIONS.hub.x + (col - 1) * 28
+      const spawnY = POSITIONS.hub.y - row * 18
 
       return {
         ...agent,

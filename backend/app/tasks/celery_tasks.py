@@ -10,11 +10,11 @@ from app.tasks.celery_app import celery_app
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @celery_app.task(name="run_research")
-def run_research_task(session_id: str, topic: str):
+def run_research_task(session_id: str, query: str):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(_async_research(session_id, topic))
+        loop.run_until_complete(_async_research(session_id, query))
     finally:
         loop.close()
 
@@ -137,16 +137,16 @@ async def _async_developer(session_id: str, query: str):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @celery_app.task(name="run_enquiry")
-def run_enquiry_task(enquiry_session_id: str, query: str, user_id: str):
+def run_enquiry_task(session_id: str, query: str, user_id: str):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(_async_enquiry(enquiry_session_id, query, user_id))
+        loop.run_until_complete(_async_enquiry(session_id, query, user_id))
     finally:
         loop.close()
 
 
-async def _async_enquiry(enquiry_session_id: str, query: str, user_id: str):
+async def _async_enquiry(session_id: str, query: str, user_id: str):
     """
     1. Call the Enquiry Department LLM to decide which hub(s) to use.
     2. Create a session in each chosen hub.
@@ -165,7 +165,7 @@ async def _async_enquiry(enquiry_session_id: str, query: str, user_id: str):
     async with AsyncSessionLocal() as db:
         enq_session = None
         try:
-            result      = await db.execute(select(EnquirySession).where(EnquirySession.id == enquiry_session_id))
+            result = await db.execute(select(EnquirySession).where(EnquirySession.id == session_id))
             enq_session = result.scalar_one_or_none()
             if not enq_session:
                 return

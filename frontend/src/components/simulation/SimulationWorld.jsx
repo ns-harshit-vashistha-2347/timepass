@@ -264,7 +264,7 @@ function Building({ bldg, isActive, agentCount, onClick }) {
                   stroke={isActive ? `${color}22` : '#140630'} strokeWidth={0.5} />
               ))}
               {/* Tiny agent silhouette in first window when active */}
-              {isActive && agentCount > 0 && fi === 1 && wi === 0 && (
+              {agentCount > 0 && fi >= 1 && wi < Math.min(agentCount, wPerFloor) && fi < floors - 1 && (
                 <Group x={wx + wW / 2} y={wy + wH * 0.45}>
                   <Circle radius={4} fill={color} opacity={0.65} />
                   <Rect x={-4} y={4} width={8} height={9} cornerRadius={2} fill={color} opacity={0.55} />
@@ -423,7 +423,7 @@ export default function SimulationWorld() {
   const researchAgents = inZone(['toResearch', 'research'])
   const devAgents      = inZone(['toDev', 'dev'])
 
-  const enquiryActive  = enquiryAgents.length > 0
+  const enquiryActive  = true
   const researchActive = activeHubs.includes('research')
   const devActive      = activeHubs.includes('developer')
 
@@ -500,7 +500,7 @@ export default function SimulationWorld() {
             onClick={() => setSelectedZone({ name: 'AGENT HUB',    agents: hubAgents })} />
 
           <Building bldg={B.enquiry}  isActive={enquiryActive}
-            agentCount={enquiryAgents.length}
+            agentCount={Math.max(1, enquiryAgents.length)}
             onClick={() => setSelectedZone({ name: 'ENQUIRY DEPT', agents: enquiryAgents })} />
 
           <Building bldg={B.research} isActive={researchActive}
@@ -511,7 +511,21 @@ export default function SimulationWorld() {
             agentCount={devAgents.length}
             onClick={() => setSelectedZone({ name: 'DEV HUB',      agents: devAgents })} />
 
-          {/* ── Agents ── */}
+          <AgentNode
+            x={B.enquiry.x + B.enquiry.w / 2}
+            y={WALK_Y - 5}
+            agent={{
+              id: 'router',
+              name: 'Router',
+              skill_level: 'expert',
+              animationState: enquiryAgents.length > 0 ? 'working' : 'idle',
+              isMoving: false,
+              isWorking: true,
+            }}
+            tick={tick}
+          />
+
+          {/* ── Store agents (hub idle + dispatched workers) ── */}
           {agents.map(agent => {
             const pos = positions[agent.id]
             if (!pos) return null
