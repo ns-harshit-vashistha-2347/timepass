@@ -81,18 +81,13 @@ DEVELOPER_TOOLS = [web_search, search_github, search_stackoverflow]
 
 
 async def run_with_tools(llm, tools: list, messages: list) -> str:
-    """
-    Runs an LLM with tool-calling in a loop until the model
-    stops requesting tools and gives a final text response.
-    The LLM decides IF and WHEN to call tools.
-    """
+    import re
     tool_map = {t.name: t for t in tools}
     llm_with_tools = llm.bind_tools(tools)
 
     response = await llm_with_tools.ainvoke(messages)
     messages = list(messages) + [response]
 
-    # Keep looping while the model wants to call tools
     while response.tool_calls:
         for tc in response.tool_calls:
             selected_tool = tool_map.get(tc["name"])
@@ -104,4 +99,16 @@ async def run_with_tools(llm, tools: list, messages: list) -> str:
         response = await llm_with_tools.ainvoke(messages)
         messages.append(response)
 
-    return response.content
+    content = response.content or ""
+
+    # ── Strip any raw tool-call XML that leaked into the final text ──────────
+    tool_names = "|".join(t.name for t in tools)
+    content = re.sub(
+        rf'<(?:{tool_names})[^>]*>.*?</(?:{tool_names})>',
+        '', content, flags=re.DOTALL
+    )
+    # Also strip bare JSON tool references like {"query": "..."}
+    content = re.sub(r'\*\s*<[^>]+>\{[^}]+\}</[^>]+>', '', content)
+    content = content.strip()
+
+    return content

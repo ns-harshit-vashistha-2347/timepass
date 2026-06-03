@@ -6,7 +6,7 @@ import OperationsPanel from '../components/OperationsPanel'
 import ActivityLog from '../components/ActivityLog'
 
 // ─── Results view ─────────────────────────────────────────────────────────────
-function ResultsView() {
+function ResultsView({ resultTime }) {
   const researchResult = useStore(s => s.researchResult)
   const devResult      = useStore(s => s.devResult)
   const [modal, setModal]   = useState(null)
@@ -38,13 +38,26 @@ function ResultsView() {
         {/* Research Result Card */}
         {researchResult && (
           <div className="bg-white rounded-2xl border border-indigo-100 shadow-sm p-6 flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-xl">🔬</div>
-              <div>
-                <div className="font-bold text-slate-800">Research Report</div>
-                <div className="text-xs text-indigo-500 font-medium">Research Lab</div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-800">
+                  Research Report
+                </span>
+
+                <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 tracking-wider">
+                  NEW
+                </span>
               </div>
-              <div className="ml-auto w-2.5 h-2.5 rounded-full bg-emerald-400" title="Completed" />
+
+              <div className="text-xs text-indigo-500 font-medium">
+                Research Lab
+
+                {resultTime && (
+                  <span className="text-slate-400 ml-2">
+                    · {resultTime.toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
             </div>
             <p className="text-slate-400 text-xs leading-relaxed border-t border-slate-50 pt-4">
               Report ready — {researchResult.length.toLocaleString()} characters generated
@@ -120,6 +133,8 @@ export default function CyberHubDashboard() {
   const devResult   = useStore(s => s.devResult)
 
   const [mainTab, setMainTab] = useState('mission')
+  const [toast, setToast] = useState(false)
+  const [resultTime, setResultTime] = useState(null)
 
   useEffect(() => {
     const load = async () => {
@@ -149,9 +164,17 @@ export default function CyberHubDashboard() {
     <div className="min-h-screen overflow-hidden" style={{ background: '#f0f4ff', fontFamily: '"Inter", "JetBrains Mono", monospace' }}>
 
       {/* Top navigation bar */}
-      <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm">
-        <div className="font-black text-xl tracking-widest text-indigo-600"
-          style={{ fontFamily: '"Orbitron", monospace' }}>
+      <header
+        className="h-14 flex items-center justify-between px-6"
+        style={{
+          background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+          boxShadow: '0 2px 20px rgba(79,70,229,0.3)'
+        }}
+      >
+        <div
+          className="font-black text-xl tracking-widest text-white"
+          style={{ fontFamily: '"Orbitron", monospace' }}
+        >
           CYBER HUB
         </div>
 
@@ -172,8 +195,8 @@ export default function CyberHubDashboard() {
           ))}
         </div>
 
-        <div className="text-xs text-slate-400 font-medium">
-          Operator: <span className="text-slate-600">{user?.name}</span>
+        <div className="text-xs text-white/60 font-medium">
+          Operator: <span className="text-white/90">{user?.name}</span>
         </div>
       </header>
 
@@ -187,7 +210,10 @@ export default function CyberHubDashboard() {
           </div>
 
           {/* Right — query panel + activity log */}
-          <div className="flex flex-col overflow-hidden bg-white border-l border-slate-200">
+          <div
+            className="flex flex-col overflow-hidden border-l border-indigo-100"
+            style={{ background: '#f5f7ff' }}
+          >
             <div className="flex-1 overflow-hidden min-h-0">
               <OperationsPanel onResultsReady={() => setMainTab('results')} />
             </div>
@@ -201,7 +227,7 @@ export default function CyberHubDashboard() {
       {/* RESULTS tab */}
       {mainTab === 'results' && (
         <div className="h-[calc(100vh-56px)] overflow-y-auto">
-          <ResultsView />
+          <ResultsView resultTime={resultTime} />
         </div>
       )}
     </div>
