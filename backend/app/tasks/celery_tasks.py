@@ -5,10 +5,6 @@ import traceback
 from app.tasks.celery_app import celery_app
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Research task  (unchanged)
-# ═══════════════════════════════════════════════════════════════════════════════
-
 @celery_app.task(name="run_research")
 def run_research_task(session_id: str, query: str):
     try:
@@ -18,15 +14,17 @@ def run_research_task(session_id: str, query: str):
 
 
 async def _async_research(session_id: str, topic: str):
-    from app.core.database import AsyncSessionLocal
+    from app.core.database import celery_db_session
     from app.agents.research.researcher import research_graph
     import app.models as models
     from sqlalchemy import select
 
-    async with AsyncSessionLocal() as db:
+    async with celery_db_session() as db:
         session = None
         try:
-            result  = await db.execute(select(models.ResearchSession).where(models.ResearchSession.id == session_id))
+            result = await db.execute(
+                select(models.ResearchSession).where(models.ResearchSession.id == session_id)
+            )
             session = result.scalar_one_or_none()
             if not session:
                 return
@@ -42,14 +40,16 @@ async def _async_research(session_id: str, topic: str):
                 "spawned_agents": [],
                 "research_pieces": [],
                 "final_report": "",
-                "collab_result": "",  
+                "collab_result": "",
                 "db": db,
             })
 
             session.result = final_state["final_report"]
             session.status = models.SessionStatus.completed
 
-            agents_result = await db.execute(select(models.Agent).where(models.Agent.session_id == session_id))
+            agents_result = await db.execute(
+                select(models.Agent).where(models.Agent.session_id == session_id)
+            )
             for agent in agents_result.scalars().all():
                 agent.status = models.AgentStatus.released
 
@@ -77,25 +77,22 @@ def run_developer_task(session_id: str, query: str):
 
 
 async def _async_developer(session_id: str, query: str):
-    from app.core.database import AsyncSessionLocal
+    from app.core.database import celery_db_session
     from app.agents.developer.developer import developer_graph
+    from app.models.dev_session import SessionStatus as DevSessionStatus
     import app.models as models
     from sqlalchemy import select
 
-    async with AsyncSessionLocal() as db:
+    async with celery_db_session() as db:
         session = None
         try:
-            result  = await db.execute(select(models.DevSession).where(models.DevSession.id == session_id))
+            result = await db.execute(
+                select(models.DevSession).where(models.DevSession.id == session_id)
+            )
             session = result.scalar_one_or_none()
             if not session:
                 return
 
-            session.status = models.DevSession.__table__.c.status.type.enum_class.processing \
-                if hasattr(models.DevSession.__table__.c.status.type, "enum_class") \
-                else "processing"
-
-            # Use the imported enum directly
-            from app.models.dev_session import SessionStatus as DevSessionStatus
             session.status = DevSessionStatus.processing
             await db.commit()
 
@@ -107,14 +104,16 @@ async def _async_developer(session_id: str, query: str):
                 "spawned_agents": [],
                 "work_pieces": [],
                 "final_output": "",
-                "collab_result": "",   
+                "collab_result": "",
                 "db": db,
             })
 
             session.result = final_state["final_output"]
             session.status = DevSessionStatus.completed
 
-            agents_result = await db.execute(select(models.Agent).where(models.Agent.session_id == session_id))
+            agents_result = await db.execute(
+                select(models.Agent).where(models.Agent.session_id == session_id)
+            )
             for agent in agents_result.scalars().all():
                 agent.status = models.AgentStatus.released
 
@@ -123,7 +122,6 @@ async def _async_developer(session_id: str, query: str):
         except Exception as exc:
             traceback.print_exc()
             if session:
-                from app.models.dev_session import SessionStatus as DevSessionStatus
                 session.status = DevSessionStatus.failed
                 session.result = f"Developer task failed: {exc}"
                 await db.commit()
@@ -136,12 +134,14 @@ async def _async_developer(session_id: str, query: str):
 
 @celery_app.task(name="run_enquiry")
 def run_enquiry_task(session_id: str, query: str, user_id: str):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    # Use asyncio.run() — same pattern as the other tasks.
+    # It creates a fresh event loop, runs the coroutine, then closes the loop.
+    # Combined with NullPool in celery_db_session(), there are no stale
+    # connections left over from a previous task's loop.
     try:
-        loop.run_until_complete(_async_enquiry(session_id, query, user_id))
-    finally:
-        loop.close()
+        asyncio.run(_async_enquiry(session_id, query, user_id))
+    except Exception:
+        raise
 
 
 async def _async_enquiry(session_id: str, query: str, user_id: str):
@@ -151,19 +151,20 @@ async def _async_enquiry(session_id: str, query: str, user_id: str):
     3. Fire the corresponding Celery task for each hub.
     4. Store the hub session IDs back on the EnquirySession row.
     """
-    from app.core.database import AsyncSessionLocal
+    from app.core.database import celery_db_session
     from app.agents.enquiry.enquiry import route_query
     from app.models.enquiry_session import EnquirySession, EnquiryStatus
     from app.models.research import ResearchSession, SessionStatus as ResearchStatus
     from app.models.dev_session import DevSession, SessionStatus as DevStatus
-    import app.models as models
     from sqlalchemy import select
     import uuid
 
-    async with AsyncSessionLocal() as db:
+    async with celery_db_session() as db:
         enq_session = None
         try:
-            result = await db.execute(select(EnquirySession).where(EnquirySession.id == session_id))
+            result = await db.execute(
+                select(EnquirySession).where(EnquirySession.id == session_id)
+            )
             enq_session = result.scalar_one_or_none()
             if not enq_session:
                 return
@@ -175,7 +176,7 @@ async def _async_enquiry(session_id: str, query: str, user_id: str):
             decision = await route_query(query)
 
             enq_session.routing_decision = json.dumps(decision.hubs)
-            enq_session.reasoning        = decision.reasoning
+            enq_session.reasoning = decision.reasoning
 
             # ── Step 2 & 3: Spawn hub sessions + fire tasks ──────────────────
             for hub_name in decision.hubs:

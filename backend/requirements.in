@@ -15,5 +15,5 @@ celery
 httpx
 websockets
 pydantic-settings
-duckduckgo-search
+ddgs
 arxiv

@@ -6,7 +6,7 @@ from langchain_core.messages import ToolMessage
 def web_search(query: str) -> str:
     """Search the web for current information, news, or general knowledge."""
     try:
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
         with DDGS() as ddgs:
             results = list(ddgs.text(query, max_results=3))
         if not results:
@@ -45,7 +45,7 @@ def search_arxiv(query: str) -> str:
 def search_github(query: str) -> str:
     """Search GitHub for relevant repositories, code examples, or open-source projects."""
     try:
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
         with DDGS() as ddgs:
             results = list(ddgs.text(f"site:github.com {query}", max_results=3))
         if not results:
@@ -62,7 +62,7 @@ def search_github(query: str) -> str:
 def search_stackoverflow(query: str) -> str:
     """Search Stack Overflow for solutions, code fixes, or technical Q&A."""
     try:
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
         with DDGS() as ddgs:
             results = list(ddgs.text(f"site:stackoverflow.com {query}", max_results=3))
         if not results:

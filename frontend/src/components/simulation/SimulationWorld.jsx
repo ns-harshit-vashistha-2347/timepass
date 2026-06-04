@@ -1,24 +1,27 @@
 import { useRef, useEffect, useState } from 'react'
-import { Stage, Layer, Rect, Circle, Line, Text, Group } from 'react-konva'
+import { Stage, Layer, Rect, Circle, Line, Text, Group, Arc } from 'react-konva'
 import { useStore } from '../../store/useStore'
 
 // ─── Canvas constants ────────────────────────────────────────────────────────
 const W = 1200
 const H = 560
-const GROUND_Y = 490   // y where building bases sit
+const GROUND_Y = 490
 
-// Building definitions — all have (y + h) === GROUND_Y
+// ─── Building definitions ────────────────────────────────────────────────────
 const B = {
-  hub:      { x: 30,   y: 190, w: 180, h: 300, color: '#4f46e5', dim: '#0a3a4a', label: 'AGENT HUB',    floors: 3 },
-  enquiry:  { x: 455,  y: 140, w: 210, h: 350, color: '#ffaa00', dim: '#5a3a08', label: 'ENQUIRY DEPT', floors: 4 },
-  research: { x: 840,  y: 205, w: 170, h: 285, color: '#4f46e5', dim: '#0a3a4a', label: 'RESEARCH LAB', floors: 3 },
-  dev:      { x: 1022, y: 248, w: 150, h: 242, color: '#4d9fff', dim: '#0a2a4a', label: 'DEV HUB',      floors: 3 },
+  hub:      { x: 28,   y: 175, w: 185, h: 315, label: 'AGENT HUB',    floors: 4,
+              color: '#06b6d4', glow: '#06b6d4', dark: '#051a25' },
+  enquiry:  { x: 448,  y: 130, w: 215, h: 360, label: 'ENQUIRY DEPT', floors: 5,
+              color: '#f59e0b', glow: '#f59e0b', dark: '#1a0e02' },
+  research: { x: 838,  y: 200, w: 175, h: 290, label: 'RESEARCH LAB', floors: 4,
+              color: '#8b5cf6', glow: '#8b5cf6', dark: '#120b20' },
+  dev:      { x: 1025, y: 242, w: 152, h: 248, label: 'DEV HUB',      floors: 3,
+              color: '#10b981', glow: '#10b981', dark: '#061610' },
 }
 
-// Agent walk positions — match useStore POSITIONS exactly
-const WALK_Y = 468
+const WALK_Y = 462
 
-// ─── Animated agents hook ────────────────────────────────────────────────────
+// ─── Animated agents ────────────────────────────────────────────────────────
 function useAnimatedAgents(agents) {
   const posRef = useRef({})
   const [positions, setPositions] = useState({})
@@ -40,12 +43,11 @@ function useAnimatedAgents(agents) {
         const cur = posRef.current[agent.id] ?? { x: agent.x ?? 120, y: agent.y ?? WALK_Y }
         const tx = agent.targetX ?? agent.x ?? 120
         const ty = agent.targetY ?? agent.y ?? WALK_Y
-        const dx = tx - cur.x
-        const dy = ty - cur.y
-        const dist = Math.sqrt(dx * dx + dy * dy)
-        if (dist > 0.8) {
-          const speed = Math.min(3, dist * 0.05)
-          next[agent.id] = { x: cur.x + (dx / dist) * speed, y: cur.y + (dy / dist) * speed }
+        const dx = tx - cur.x, dy = ty - cur.y
+        const dist = Math.sqrt(dx*dx + dy*dy)
+        if (dist > 0.6) {
+          const speed = Math.min(2.5, dist * 0.06)
+          next[agent.id] = { x: cur.x + (dx/dist)*speed, y: cur.y + (dy/dist)*speed }
         } else {
           next[agent.id] = { x: tx, y: ty }
         }
@@ -63,72 +65,135 @@ function useAnimatedAgents(agents) {
 
 // ─── Skill colors ────────────────────────────────────────────────────────────
 const SKILL_COLOR = {
-  junior: '#34d399',
-  mid:    '#60a5fa',
-  senior: '#4f46e5',
-  expert: '#fbbf24',
+  junior: '#10b981',
+  mid:    '#06b6d4',
+  senior: '#8b5cf6',
+  expert: '#f59e0b',
 }
 
-// ─── Agent character ─────────────────────────────────────────────────────────
+// ─── Agent character (robot style) ───────────────────────────────────────────
 function AgentNode({ x, y, agent, tick }) {
-  const color   = SKILL_COLOR[agent.skill_level] || '#4f46e5'
+  const color   = SKILL_COLOR[agent.skill_level] || '#06b6d4'
   const walking = agent.animationState === 'walking'
   const working = agent.animationState === 'working'
-  const bobY    = walking ? Math.sin(tick * 0.22) * 3.5
-                : working ? Math.sin(tick * 0.12) * 1.5 : 0
+  const idle    = !walking && !working
+
+  const bobY = walking ? Math.sin(tick * 0.25) * 4
+             : working ? Math.sin(tick * 0.14) * 2 : 0
+  const legSwing = walking ? Math.sin(tick * 0.25) * 5 : 0
 
   return (
     <Group x={x} y={y + bobY}>
+      {/* Aura when working */}
+      {working && (
+        <Circle radius={22} fill={color} opacity={0.07 + Math.sin(tick * 0.1) * 0.04} />
+      )}
+
       {/* Ground shadow */}
-      <Rect x={-11} y={24} width={22} height={5} cornerRadius={3}
-        fill={color} opacity={0.12} />
-
-      {/* Body blob */}
-      <Rect x={-9} y={2} width={18} height={21} cornerRadius={[4,4,7,7]}
-        fill={color} opacity={0.92}
-        shadowColor={color} shadowBlur={working ? 12 : 4} shadowOpacity={0.5} />
-
-      {/* Head */}
-      <Circle y={-6} radius={11}
-        fill={color}
-        shadowColor={color} shadowBlur={working ? 14 : 5} shadowOpacity={0.55} />
-
-      {/* Goggle band */}
-      <Rect x={-11} y={-10} width={22} height={6} cornerRadius={3}
-        fill="rgba(0,0,0,0.45)" />
-
-      {/* Eyes */}
-      <Circle x={-4} y={-7} radius={3.5} fill="white" />
-      <Circle x={4}  y={-7} radius={3.5} fill="white" />
-      <Circle x={-4} y={-6} radius={1.8} fill="#060010" />
-      <Circle x={4}  y={-6} radius={1.8} fill="#060010" />
-      <Circle x={-3} y={-7} radius={0.8} fill="white" />
-      <Circle x={5}  y={-7} radius={0.8} fill="white" />
-
-      {/* Arms */}
-      <Line points={[-9, 8, working ? -16 : -14, working ? -4 : 20]}
-        stroke={color} strokeWidth={4} lineCap="round" />
-      <Line points={[9,  8, working ?  16 :  14, working ? -4 : 20]}
-        stroke={color} strokeWidth={4} lineCap="round" />
+      <Rect x={-14} y={28} width={28} height={6} cornerRadius={4}
+        fill="#000" opacity={0.3} />
 
       {/* Legs */}
-      <Line points={[-5, 23, walking ? -9 : -5, 36]}
-        stroke={color} strokeWidth={4} lineCap="round" />
-      <Line points={[5,  23, walking ?  9 :  5, 36]}
-        stroke={color} strokeWidth={4} lineCap="round" />
+      <Rect
+        x={-8} y={18}
+        width={7} height={14}
+        cornerRadius={[0,0,4,4]}
+        fill={color} opacity={0.85}
+        rotation={walking ? legSwing : 0}
+      />
+      <Rect
+        x={1} y={18}
+        width={7} height={14}
+        cornerRadius={[0,0,4,4]}
+        fill={color} opacity={0.85}
+        rotation={walking ? -legSwing : 0}
+      />
 
-      {/* Working sparkles */}
+      {/* Body */}
+      <Rect x={-11} y={-2} width={22} height={22} cornerRadius={[3,3,6,6]}
+        fill={color} opacity={0.9}
+        shadowColor={color} shadowBlur={working ? 14 : 5} shadowOpacity={0.6}
+      />
+      {/* Body highlight stripe */}
+      <Rect x={-7} y={1} width={14} height={3} cornerRadius={2}
+        fill="rgba(255,255,255,0.2)" />
+      {/* Chest badge */}
+      <Rect x={-4} y={6} width={8} height={8} cornerRadius={1}
+        fill={`${color}44`} stroke={`${color}88`} strokeWidth={0.8} />
+      {/* Chest light */}
+      <Circle x={0} y={10} radius={2}
+        fill={working ? 'white' : color}
+        opacity={working ? 0.9 + Math.sin(tick * 0.2) * 0.1 : 0.6}
+        shadowColor={color} shadowBlur={working ? 8 : 0} shadowOpacity={0.9}
+      />
+
+      {/* Neck */}
+      <Rect x={-4} y={-7} width={8} height={7} cornerRadius={2}
+        fill={color} opacity={0.7} />
+
+      {/* Head */}
+      <Rect x={-13} y={-22} width={26} height={20} cornerRadius={5}
+        fill={color} opacity={0.95}
+        shadowColor={color} shadowBlur={working ? 16 : 6} shadowOpacity={0.55}
+      />
+
+      {/* Visor */}
+      <Rect x={-10} y={-20} width={20} height={10} cornerRadius={3}
+        fill="rgba(0,0,0,0.65)" />
+      {/* Eye lights in visor */}
+      <Circle x={-4} y={-15} radius={3}
+        fill={working ? 'white' : `${color}cc`}
+        shadowColor={color} shadowBlur={working ? 10 : 3} shadowOpacity={0.9}
+        opacity={0.9 + Math.sin(tick * 0.15) * 0.1}
+      />
+      <Circle x={4} y={-15} radius={3}
+        fill={working ? 'white' : `${color}cc`}
+        shadowColor={color} shadowBlur={working ? 10 : 3} shadowOpacity={0.9}
+        opacity={0.9 + Math.sin(tick * 0.15 + 0.3) * 0.1}
+      />
+      {/* Head top indicator */}
+      <Circle x={0} y={-25} radius={2.5}
+        fill={color}
+        shadowColor={color} shadowBlur={8} shadowOpacity={0.9}
+        opacity={idle ? 0.4 : 1}
+      />
+
+      {/* Arms */}
+      <Rect
+        x={working ? 14 : 11} y={working ? -6 : 2}
+        width={5} height={working ? 14 : 12}
+        cornerRadius={3}
+        fill={color} opacity={0.8}
+        rotation={working ? -35 : 10}
+        offsetX={0} offsetY={0}
+      />
+      <Rect
+        x={working ? -19 : -16} y={working ? -6 : 2}
+        width={5} height={working ? 14 : 12}
+        cornerRadius={3}
+        fill={color} opacity={0.8}
+        rotation={working ? 35 : -10}
+      />
+
+      {/* Working particles */}
       {working && (
         <>
-          <Text text="✦" x={10}  y={-20} fontSize={10} fill={color} opacity={0.9} />
-          <Text text="✦" x={-20} y={-14} fontSize={7}  fill={color} opacity={0.7} />
+          <Circle x={14 + Math.sin(tick*0.3)*4}  y={-28 + Math.cos(tick*0.3)*4} radius={2}
+            fill={color} opacity={0.7 + Math.sin(tick*0.3)*0.3} />
+          <Circle x={-14 + Math.sin(tick*0.2)*5} y={-24 + Math.cos(tick*0.2)*5} radius={1.5}
+            fill={color} opacity={0.6 + Math.cos(tick*0.2)*0.3} />
+          <Circle x={6}  y={-34 + Math.cos(tick*0.25)*3} radius={1.5}
+            fill="white" opacity={0.5 + Math.sin(tick*0.25)*0.3} />
         </>
       )}
 
-      {/* Name */}
-      <Text text={agent.name?.split(' ')[0] ?? ''}
-        x={-22} y={38} width={44} align="center"
-        fontSize={7} fill={color} opacity={0.85} />
+      {/* Name tag */}
+      <Text
+        text={agent.name?.split(' ')[0] ?? ''}
+        x={-25} y={32} width={50} align="center"
+        fontSize={8} fill={color} opacity={0.9}
+        fontStyle="bold"
+      />
     </Group>
   )
 }
@@ -138,31 +203,18 @@ function Tree({ x, s = 1 }) {
   return (
     <Group x={x} y={GROUND_Y}>
       {/* Shadow */}
-      <Rect x={-7 * s} y={-3} width={14 * s} height={5}
-        cornerRadius={4} fill="#000" opacity={0.25} />
+      <Rect x={-6*s} y={-3} width={12*s} height={4} cornerRadius={3} fill="#000" opacity={0.3} />
       {/* Trunk */}
-      <Rect x={-4 * s} y={-32 * s} width={8 * s} height={32 * s}
-        fill="#241204" cornerRadius={[1,1,0,0]} />
-      {/* Lower leaves */}
-      <Circle             y={-46 * s} radius={19 * s} fill="#091a0c" opacity={0.95} />
-      <Circle x={-14 * s} y={-36 * s} radius={13 * s} fill="#071508" opacity={0.9}  />
-      <Circle x={ 14 * s} y={-36 * s} radius={13 * s} fill="#071508" opacity={0.9}  />
-      {/* Upper leaves */}
-      <Circle             y={-62 * s} radius={13 * s} fill="#0d2814" opacity={0.9}  />
+      <Rect x={-3.5*s} y={-30*s} width={7*s} height={30*s}
+        fill="#1a0f05" cornerRadius={[2,2,0,0]} />
+      {/* Foliage layers */}
+      <Circle y={-55*s} radius={22*s} fill="#0a2210" opacity={0.95}
+        shadowColor="#10b981" shadowBlur={6} shadowOpacity={0.15} />
+      <Circle x={-16*s} y={-42*s} radius={15*s} fill="#081a0d" opacity={0.9} />
+      <Circle x={ 16*s} y={-42*s} radius={15*s} fill="#081a0d" opacity={0.9} />
+      <Circle y={-68*s} radius={14*s} fill="#0d2e14" opacity={0.9} />
       {/* Highlight */}
-      <Circle x={-5 * s}  y={-66 * s} radius={5  * s} fill="#1a4a22" opacity={0.55} />
-    </Group>
-  )
-}
-
-// ─── Bush ────────────────────────────────────────────────────────────────────
-function Bush({ x }) {
-  return (
-    <Group x={x} y={GROUND_Y}>
-      <Circle             y={-9}  radius={9}  fill="#060f08" opacity={0.85} />
-      <Circle x={-8}      y={-6}  radius={7}  fill="#050d07" opacity={0.85} />
-      <Circle x={ 8}      y={-6}  radius={7}  fill="#050d07" opacity={0.85} />
-      <Circle             y={-14} radius={5}  fill="#0a1c0c" opacity={0.8}  />
+      <Circle x={-6*s} y={-72*s} radius={6*s} fill="#1a4a22" opacity={0.5} />
     </Group>
   )
 }
@@ -170,220 +222,267 @@ function Bush({ x }) {
 // ─── Street lamp ─────────────────────────────────────────────────────────────
 function Lamp({ x, isActive }) {
   return (
-    <Group x={x} y={GROUND_Y - 12}>
-      <Rect x={-2} y={-90} width={4} height={90} fill="#1a0a35" cornerRadius={2} />
-      <Rect x={-2} y={-90} width={22} height={3}  fill="#1a0a35" cornerRadius={1} />
-      <Circle x={20} y={-90} radius={5}
-        fill={isActive ? '#fbbf24bb' : '#221040'}
-        shadowColor={isActive ? '#fbbf24' : 'transparent'}
-        shadowBlur={isActive ? 18 : 0} shadowOpacity={0.75} />
+    <Group x={x} y={GROUND_Y - 14}>
+      <Rect x={-2} y={-95} width={4} height={95} fill="#0d1f35" cornerRadius={2} />
+      <Rect x={-2} y={-95} width={26} height={3.5} fill="#0d1f35" cornerRadius={1} />
+      <Circle x={24} y={-94} radius={6}
+        fill={isActive ? '#fde68a' : '#1a2a40'}
+        shadowColor={isActive ? '#f59e0b' : 'transparent'}
+        shadowBlur={isActive ? 24 : 0} shadowOpacity={0.8}
+      />
+      {isActive && (
+        <Circle x={24} y={-94} radius={14}
+          fill="#f59e0b" opacity={0.08 + Math.random() * 0.02}
+        />
+      )}
     </Group>
   )
 }
 
 // ─── Building ────────────────────────────────────────────────────────────────
-function Building({ bldg, isActive, agentCount, onClick }) {
-  const { x, y, w, h, color, dim, label, floors } = bldg
-  const ac = isActive ? color : dim
-  const wPerFloor = w > 190 ? 4 : 3
-  const fH  = h / floors
-  const wW  = Math.floor((w - 28) / wPerFloor) - 6
-  const wH  = Math.floor(fH * 0.42)
+function Building({ bldg, isActive, agentCount, onClick, tick }) {
+  const { x, y, w, h, color, dark, label, floors } = bldg
+  const fH = h / floors
+  const cols = w > 190 ? 4 : 3
+  const wW = Math.floor((w - 32) / cols) - 4
+  const wH = Math.floor(fH * 0.38)
+  const pulse = isActive ? 0.5 + Math.sin(tick * 0.08) * 0.1 : 0.15
 
   return (
     <Group onClick={onClick} onTap={onClick}>
 
-      {/* Outer glow when active */}
+      {/* Far glow when active */}
       {isActive && (
-        <Rect x={x - 14} y={y - 12} width={w + 28} height={h + 12}
-          cornerRadius={8} fill={color} opacity={0.06}
-          shadowColor={color} shadowBlur={60} shadowOpacity={0.85} />
+        <Rect x={x-20} y={y-18} width={w+40} height={h+18}
+          cornerRadius={12}
+          fill={color} opacity={0.04}
+          shadowColor={color} shadowBlur={80} shadowOpacity={0.7}
+        />
       )}
 
-      {/* Foundation */}
-      <Rect x={x - 10} y={GROUND_Y - 10} width={w + 20} height={16}
-        fill={isActive ? `${color}28` : '#0a0318'}
-        stroke={ac} strokeWidth={1} cornerRadius={[0,0,4,4]} />
+      {/* Foundation slab */}
+      <Rect x={x-12} y={GROUND_Y-12} width={w+24} height={18}
+        fill={isActive ? `${color}22` : dark}
+        stroke={color} strokeWidth={isActive ? 1.5 : 0.6} opacity={isActive ? 0.9 : 0.5}
+        cornerRadius={[0,0,5,5]}
+      />
 
-      {/* Main facade */}
+      {/* Main facade — gradient */}
       <Rect x={x} y={y} width={w} height={h}
-        fillLinearGradientStartPoint={{ x: 0,  y: 0 }}
-        fillLinearGradientEndPoint={  { x: w,  y: h }}
-        fillLinearGradientColorStops={[0, '#130928', 0.45, '#0e0620', 1, '#080315']}
-        stroke={ac} strokeWidth={isActive ? 1.8 : 1}
-        shadowColor={isActive ? color : 'transparent'}
-        shadowBlur={isActive ? 22 : 0} shadowOpacity={0.35} />
-
-      {/* Glass panel shimmer */}
-      <Rect x={x + 8} y={y} width={14} height={h}
         fillLinearGradientStartPoint={{ x: 0, y: 0 }}
-        fillLinearGradientEndPoint={  { x: 14,y: 0 }}
-        fillLinearGradientColorStops={[0,'rgba(255,255,255,0)', 0.5,`rgba(255,255,255,${isActive ? 0.03 : 0.015})`, 1,'rgba(255,255,255,0)']}
-        listening={false} />
+        fillLinearGradientEndPoint={{ x: w, y: h }}
+        fillLinearGradientColorStops={[
+          0, isActive ? `${dark}ee` : '#080f1e',
+          0.5, isActive ? dark : '#050c18',
+          1, isActive ? `${dark}cc` : '#040a14',
+        ]}
+        stroke={color}
+        strokeWidth={isActive ? 2 : 0.8}
+        opacity={isActive ? 1 : 0.8}
+        shadowColor={isActive ? color : 'transparent'}
+        shadowBlur={isActive ? 30 : 0} shadowOpacity={0.45}
+        cornerRadius={[4,4,0,0]}
+      />
+
+      {/* Facade panel accent lines */}
+      <Rect x={x+4} y={y} width={6} height={h}
+        fillLinearGradientStartPoint={{ x: 0, y: 0 }}
+        fillLinearGradientEndPoint={{ x: 6, y: 0 }}
+        fillLinearGradientColorStops={[
+          0, `${color}00`, 0.5, `${color}${isActive ? '22' : '0a'}`, 1, `${color}00`
+        ]}
+        listening={false}
+      />
+      <Rect x={x+w-10} y={y} width={6} height={h}
+        fillLinearGradientStartPoint={{ x: 0, y: 0 }}
+        fillLinearGradientEndPoint={{ x: 6, y: 0 }}
+        fillLinearGradientColorStops={[
+          0, `${color}00`, 0.5, `${color}${isActive ? '22' : '0a'}`, 1, `${color}00`
+        ]}
+        listening={false}
+      />
 
       {/* Floor dividers */}
       {Array.from({ length: floors - 1 }, (_, i) => (
         <Line key={i}
-          points={[x + 6, y + fH * (i+1), x + w - 6, y + fH * (i+1)]}
-          stroke={isActive ? `${color}30` : '#180730'} strokeWidth={1} />
+          points={[x+8, y+fH*(i+1), x+w-8, y+fH*(i+1)]}
+          stroke={isActive ? `${color}35` : '#0f1e30'}
+          strokeWidth={1}
+        />
       ))}
 
       {/* Windows */}
       {Array.from({ length: floors }, (_, fi) =>
-        Array.from({ length: wPerFloor }, (_, wi) => {
-          const wx   = x + 12 + wi * ((w - 20) / wPerFloor) + 2
-          const wy   = y + fi * fH + fH * 0.22
-          const isLit = isActive || (fi + wi) % 3 !== 0
-          const isDoor = fi === floors - 1 && wi === Math.floor(wPerFloor / 2)
+        Array.from({ length: cols }, (_, wi) => {
+          const wx = x + 14 + wi * ((w-28) / cols) + 2
+          const wy = y + fi * fH + fH * 0.18
+          const isDoor = fi === floors-1 && wi === Math.floor(cols/2)
+          const litChance = (fi + wi * 3 + 1) % 4 !== 0
+          const isLit = isActive || litChance
+          const brightness = isActive ? (0.3 + Math.sin(tick * 0.07 + fi + wi) * 0.08) : 0.12
 
           if (isDoor) {
             return (
-              <Group key={`${fi}-${wi}`}>
-                <Rect x={wx} y={wy + 2} width={wW} height={wH + 14}
-                  fill={isActive ? `${color}15` : '#090215'}
-                  stroke={isActive ? `${color}45` : '#160530'}
-                  strokeWidth={1} cornerRadius={[wW / 2.2, wW / 2.2, 0, 0]}
-                  shadowColor={isActive ? color : 'transparent'}
-                  shadowBlur={isActive ? 10 : 0} shadowOpacity={0.4} />
-              </Group>
+              <Rect key={`${fi}-${wi}`}
+                x={wx+2} y={wy+4} width={wW-4} height={wH+20}
+                fill={isActive ? `${color}20` : dark}
+                stroke={isActive ? `${color}55` : `${color}20`}
+                strokeWidth={1}
+                cornerRadius={[wW/2.5, wW/2.5, 0, 0]}
+                shadowColor={isActive ? color : 'transparent'}
+                shadowBlur={isActive ? 12 : 0} shadowOpacity={0.5}
+              />
             )
           }
-
           return (
             <Group key={`${fi}-${wi}`}>
               <Rect x={wx} y={wy} width={wW} height={wH}
-                fill={isLit ? (isActive ? `${color}1e` : '#0f0828') : '#060212'}
-                stroke={isLit ? (isActive ? `${color}55` : '#1c0c3a') : '#0c0420'}
-                strokeWidth={1} cornerRadius={2}
+                fill={isLit ? `${color}${Math.round(brightness*255).toString(16).padStart(2,'0')}` : dark}
+                stroke={isLit ? `${color}${isActive ? '55' : '25'}` : `${color}15`}
+                strokeWidth={0.8}
+                cornerRadius={2}
                 shadowColor={isActive && isLit ? color : 'transparent'}
-                shadowBlur={isActive ? 7 : 0} shadowOpacity={0.45} />
-              {/* Blind lines */}
-              {isLit && [0.35, 0.65].map((r, li) => (
-                <Line key={li}
-                  points={[wx + 2, wy + wH * r, wx + wW - 2, wy + wH * r]}
-                  stroke={isActive ? `${color}22` : '#140630'} strokeWidth={0.5} />
-              ))}
-              {/* Tiny agent silhouette in first window when active */}
-              {agentCount > 0 && fi >= 1 && wi < Math.min(agentCount, wPerFloor) && fi < floors - 1 && (
-                <Group x={wx + wW / 2} y={wy + wH * 0.45}>
-                  <Circle radius={4} fill={color} opacity={0.65} />
-                  <Rect x={-4} y={4} width={8} height={9} cornerRadius={2} fill={color} opacity={0.55} />
-                </Group>
-              )}
+                shadowBlur={isActive ? 6 : 0} shadowOpacity={0.5}
+              />
+              {/* Window frame cross */}
+              <Line points={[wx+wW/2, wy+1, wx+wW/2, wy+wH-1]}
+                stroke={isLit ? `${color}${isActive ? '30' : '18'}` : `${color}08`} strokeWidth={0.5} />
+              <Line points={[wx+2, wy+wH/2, wx+wW-2, wy+wH/2]}
+                stroke={isLit ? `${color}${isActive ? '30' : '18'}` : `${color}08`} strokeWidth={0.5} />
             </Group>
           )
         })
       )}
 
-      {/* Left / right edge accent */}
-      <Line points={[x, y, x, GROUND_Y]}       stroke={isActive ? `${color}55` : `${dim}55`} strokeWidth={2} />
-      <Line points={[x+w, y, x+w, GROUND_Y]}   stroke={isActive ? `${color}55` : `${dim}55`} strokeWidth={2} />
+      {/* Edge pillars */}
+      <Rect x={x} y={y} width={5} height={h}
+        fill={isActive ? `${color}18` : `${color}08`}
+        stroke={color} strokeWidth={isActive ? 1.5 : 0.6} opacity={0.8}
+      />
+      <Rect x={x+w-5} y={y} width={5} height={h}
+        fill={isActive ? `${color}18` : `${color}08`}
+        stroke={color} strokeWidth={isActive ? 1.5 : 0.6} opacity={0.8}
+      />
 
       {/* Roof platform */}
-      <Rect x={x - 5} y={y - 10} width={w + 10} height={12}
-        fill={isActive ? `${color}38` : '#0e0422'}
-        stroke={ac} strokeWidth={1} cornerRadius={[4,4,0,0]}
+      <Rect x={x-6} y={y-12} width={w+12} height={14}
+        fill={isActive ? `${color}30` : dark}
+        stroke={color} strokeWidth={isActive ? 1.5 : 0.6}
+        cornerRadius={[6,6,0,0]}
         shadowColor={isActive ? color : 'transparent'}
-        shadowBlur={isActive ? 18 : 0} shadowOpacity={0.6} />
+        shadowBlur={isActive ? 22 : 0} shadowOpacity={0.7}
+      />
 
-      {/* HVAC boxes */}
-      {[0.15, 0.48, 0.78].map((r, i) => (
-        <Rect key={i} x={x + w * r - 9} y={y - 28} width={18} height={18}
-          fill={isActive ? `${color}22` : '#090318'}
-          stroke={isActive ? `${color}44` : '#160530'} strokeWidth={1} cornerRadius={2} />
+      {/* HVAC units */}
+      {[0.18, 0.5, 0.82].map((r, i) => (
+        <Rect key={i} x={x+w*r-9} y={y-30} width={18} height={18}
+          fill={isActive ? `${color}20` : dark}
+          stroke={isActive ? `${color}50` : `${color}20`}
+          strokeWidth={0.8} cornerRadius={2}
+        />
       ))}
 
       {/* Antenna */}
-      <Line points={[x + w/2, y - 28, x + w/2, y - 56]}
-        stroke={isActive ? color : dim} strokeWidth={2} />
-      <Circle x={x + w/2} y={y - 58} radius={4}
-        fill={isActive ? color : dim}
-        shadowColor={isActive ? color : 'transparent'}
-        shadowBlur={isActive ? 14 : 0} shadowOpacity={0.9} />
+      <Line points={[x+w/2, y-30, x+w/2, y-58]}
+        stroke={color} strokeWidth={isActive ? 2.5 : 1.2} opacity={isActive ? 0.9 : 0.4}
+      />
+      <Circle x={x+w/2} y={y-60} radius={5}
+        fill={color}
+        shadowColor={color} shadowBlur={isActive ? 18 : 5} shadowOpacity={0.9}
+        opacity={pulse}
+      />
       {isActive && (
-        <Circle x={x + w/2} y={y - 58} radius={9}
-          fill={color} opacity={0.25} />
+        <>
+          <Circle x={x+w/2} y={y-60} radius={12}
+            fill={color} opacity={0.1 + Math.sin(tick * 0.08) * 0.04}
+          />
+          <Circle x={x+w/2} y={y-60} radius={20}
+            fill={color} opacity={0.04 + Math.sin(tick * 0.06) * 0.02}
+          />
+        </>
       )}
 
-      {/* Building name sign */}
-      <Rect x={x + 6} y={y + 10} width={w - 12} height={24}
-        fill={isActive ? `${color}18` : '#090215'}
-        stroke={isActive ? `${color}44` : '#160530'}
-        strokeWidth={1} cornerRadius={3} />
-      <Text text={label} x={x} y={y + 15} width={w} align="center"
-        fontSize={9} fill={isActive ? 'white' : ac}
-        fontStyle="bold" letterSpacing={2} />
+      {/* Name sign */}
+      <Rect x={x+8} y={y+10} width={w-16} height={22}
+        fill={isActive ? `${color}18` : dark}
+        stroke={isActive ? `${color}55` : `${color}20`}
+        strokeWidth={1} cornerRadius={3}
+      />
+      <Text text={label} x={x} y={y+15} width={w} align="center"
+        fontSize={9} fill={isActive ? 'white' : color}
+        fontStyle="bold" letterSpacing={2} opacity={isActive ? 0.95 : 0.55}
+      />
 
       {/* Agent count badge */}
       {agentCount > 0 && (
         <Group>
-          <Circle x={x + w - 13} y={y + 7} radius={12}
-            fill={color} shadowColor={color} shadowBlur={10} shadowOpacity={0.8} />
-          <Text text={String(agentCount)}
-            x={x + w - 25} y={y + 1} width={24} align="center"
-            fontSize={11} fill="white" fontStyle="bold" />
+          <Circle x={x+w-15} y={y+8} radius={13}
+            fill={color}
+            shadowColor={color} shadowBlur={12} shadowOpacity={0.9}
+          />
+          <Text text={String(agentCount)} x={x+w-27} y={y+2} width={24} align="center"
+            fontSize={12} fill="white" fontStyle="bold"
+          />
         </Group>
       )}
 
       {/* Inspect hint */}
-      <Text text="▼ INSPECT" x={x} y={GROUND_Y - 22} width={w} align="center"
-        fontSize={7} fill={ac} opacity={0.4} letterSpacing={1} />
+      <Text text="▼ INSPECT" x={x} y={GROUND_Y-22} width={w} align="center"
+        fontSize={7} fill={color} opacity={isActive ? 0.5 : 0.25} letterSpacing={1}
+      />
     </Group>
   )
 }
 
-// ─── Road system ─────────────────────────────────────────────────────────────
+// ─── Roads ────────────────────────────────────────────────────────────────────
 function Roads({ isActive, activeHubs, tick }) {
-  const off = -(tick * 0.6) % 26
+  const off = -(tick * 0.7) % 28
+  const ry = GROUND_Y - 8
 
-  // Road endpoints at ground level
-  const ry = GROUND_Y - 8   // road center y
-
-  // Hub → Enquiry
   const r1 = [B.hub.x + B.hub.w, ry, B.enquiry.x, ry]
-  // Enquiry → Research
-  const r2 = [B.enquiry.x + B.enquiry.w, ry, B.research.x, ry - 4]
-  // Enquiry → Dev (slight downward fork)
-  const r3 = [B.enquiry.x + B.enquiry.w, ry, B.dev.x, ry + 4]
+  const r2 = [B.enquiry.x + B.enquiry.w, ry, B.research.x, ry - 3]
+  const r3 = [B.enquiry.x + B.enquiry.w, ry, B.dev.x, ry + 3]
 
   const resActive = activeHubs.includes('research')
   const devActive = activeHubs.includes('developer')
 
   return (
     <Group>
-      {/* ── Base road surfaces ── */}
       {[r1, r2, r3].map((pts, i) => (
         <Group key={i}>
-          <Line points={pts} stroke="#0e0825" strokeWidth={22} lineCap="round" />
-          <Line points={pts} stroke="#160c35" strokeWidth={16} lineCap="round" />
-          {/* Center dash markings */}
-          <Line points={pts} stroke="#1e0f40" strokeWidth={1.5}
-            dash={[12, 9]} dashOffset={off} lineCap="round" />
+          <Line points={pts} stroke="#060f1e" strokeWidth={24} lineCap="round" />
+          <Line points={pts} stroke="#0a1828" strokeWidth={18} lineCap="round" />
+          <Line points={pts} stroke="#1a3050" strokeWidth={1.5}
+            dash={[14, 10]} dashOffset={off} lineCap="round" opacity={0.4} />
         </Group>
       ))}
 
-      {/* ── Active flow lines ── */}
+      {/* Active flow lines */}
       {isActive && (
-        <Line points={r1} stroke="#4f46e5" strokeWidth={2.5}
-          dash={[16, 10]} dashOffset={off} opacity={0.85} lineCap="round"
-          shadowColor="#4f46e5" shadowBlur={10} shadowOpacity={0.8} />
+        <Line points={r1} stroke="#06b6d4" strokeWidth={3}
+          dash={[18, 11]} dashOffset={off} opacity={0.9} lineCap="round"
+          shadowColor="#06b6d4" shadowBlur={12} shadowOpacity={0.9}
+        />
       )}
       {resActive && (
-        <Line points={r2} stroke="#4f46e5" strokeWidth={2.5}
-          dash={[16, 10]} dashOffset={off} opacity={0.85} lineCap="round"
-          shadowColor="#4f46e5" shadowBlur={10} shadowOpacity={0.8} />
+        <Line points={r2} stroke="#8b5cf6" strokeWidth={3}
+          dash={[18, 11]} dashOffset={off} opacity={0.9} lineCap="round"
+          shadowColor="#8b5cf6" shadowBlur={12} shadowOpacity={0.9}
+        />
       )}
       {devActive && (
-        <Line points={r3} stroke="#60a5fa" strokeWidth={2.5}
-          dash={[16, 10]} dashOffset={off} opacity={0.85} lineCap="round"
-          shadowColor="#60a5fa" shadowBlur={10} shadowOpacity={0.8} />
+        <Line points={r3} stroke="#10b981" strokeWidth={3}
+          dash={[18, 11]} dashOffset={off} opacity={0.9} lineCap="round"
+          shadowColor="#10b981" shadowBlur={12} shadowOpacity={0.9}
+        />
       )}
 
-      {/* Fork junction dot */}
+      {/* Junction node */}
       {isActive && (resActive || devActive) && (
-        <Circle x={B.enquiry.x + B.enquiry.w + 10} y={ry} radius={5}
-          fill="#4f46e5"
-          shadowColor="#4f46e5" shadowBlur={12} shadowOpacity={0.9} />
+        <Circle x={B.enquiry.x + B.enquiry.w + 12} y={ry} radius={6}
+          fill="#f59e0b"
+          shadowColor="#f59e0b" shadowBlur={16} shadowOpacity={0.9}
+        />
       )}
     </Group>
   )
@@ -402,7 +501,7 @@ export default function SimulationWorld() {
   const positions = useAnimatedAgents(agents)
 
   useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 50)
+    const id = setInterval(() => setTick(t => t + 1), 48)
     return () => clearInterval(id)
   }, [])
 
@@ -417,115 +516,162 @@ export default function SimulationWorld() {
   const inZone = (zones) => agents.filter(a =>
     Array.isArray(zones) ? zones.includes(a.currentZone) : a.currentZone === zones
   )
-
   const hubAgents      = inZone(['hub', 'returning'])
   const enquiryAgents  = inZone(['toEnquiry', 'enquiry'])
   const researchAgents = inZone(['toResearch', 'research'])
   const devAgents      = inZone(['toDev', 'dev'])
 
-  const enquiryActive  = true
   const researchActive = activeHubs.includes('research')
   const devActive      = activeHubs.includes('developer')
 
-  return (
-    <div ref={containerRef}
-      className="relative w-full rounded-xl overflow-hidden"
-      style={{ height: H, background: '#040210',
-               border: '1px solid rgba(0,229,255,0.15)' }}>
+  // Cloud-like distant hills / skyline silhouette positions
+  const cityBg = [
+    {x:55,   h:55,  w:42},  {x:140,  h:80,  w:35}, {x:220,  h:45,  w:50},
+    {x:310,  h:70,  w:38},  {x:398,  h:38,  w:45}, {x:620,  h:60,  w:40},
+    {x:700,  h:88,  w:32},  {x:760,  h:50,  w:48}, {x:920,  h:65,  w:36},
+    {x:1000, h:42,  w:55},  {x:1100, h:78,  w:38},
+  ]
 
+  // Stars
+  const stars = Array.from({ length: 55 }, (_, i) => ({
+    x: (i * 157.3 + 43) % W,
+    y: (i * 91.7 + 11)  % (H * 0.45),
+    r: i % 7 === 0 ? 1.8 : i % 3 === 0 ? 1.2 : 0.7,
+    op: 0.08 + (i % 8) * 0.04,
+  }))
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full rounded-2xl overflow-hidden"
+      style={{
+        height: H,
+        border: '1px solid rgba(6,182,212,0.18)',
+        boxShadow: '0 0 40px rgba(6,182,212,0.06)',
+      }}
+    >
       <Stage width={stageW} height={H} scaleX={scale} scaleY={scale}>
         <Layer>
 
-          {/* ── Sky gradient ── */}
+          {/* ── Sky — beautiful gradient dawn/dusk ── */}
           <Rect x={0} y={0} width={W} height={H}
             fillLinearGradientStartPoint={{ x: 0, y: 0 }}
-            fillLinearGradientEndPoint={  { x: 0, y: H }}
-            fillLinearGradientColorStops={[0, '#030112', 0.55, '#070218', 1, '#0a0320']} />
+            fillLinearGradientEndPoint={{ x: 0, y: H }}
+            fillLinearGradientColorStops={[
+              0, '#020814',
+              0.3, '#04101e',
+              0.6, '#071828',
+              0.8, '#0d2238',
+              0.9, '#102840',
+              1,   '#0a1e30',
+            ]}
+          />
+
+          {/* Horizon glow */}
+          <Rect x={0} y={GROUND_Y-90} width={W} height={120}
+            fillLinearGradientStartPoint={{ x: 0, y: 0 }}
+            fillLinearGradientEndPoint={{ x: 0, y: 120 }}
+            fillLinearGradientColorStops={[
+              0, 'rgba(6,182,212,0)',
+              0.5, 'rgba(6,182,212,0.04)',
+              1, 'rgba(6,182,212,0.02)',
+            ]}
+          />
 
           {/* ── Stars ── */}
-          {Array.from({ length: 50 }, (_, i) => (
-            <Circle key={i}
-              x={(i * 149.5) % W}
-              y={(i * 89.7)  % (H * 0.52)}
-              radius={i % 6 === 0 ? 1.6 : 0.9}
-              fill="white"
-              opacity={0.07 + (i % 6) * 0.04} />
+          {stars.map((s, i) => (
+            <Circle key={i} x={s.x} y={s.y} radius={s.r}
+              fill="white" opacity={s.op + Math.sin(tick * 0.03 + i) * 0.02}
+            />
           ))}
 
+          {/* ── Moon ── */}
+          <Circle x={60} y={60} radius={28}
+            fill="#0d2040"
+            shadowColor="#06b6d4" shadowBlur={30} shadowOpacity={0.2}
+          />
+          <Circle x={60} y={60} radius={27}
+            fillLinearGradientStartPoint={{ x: -28, y: -28 }}
+            fillLinearGradientEndPoint={{ x: 28, y: 28 }}
+            fillLinearGradientColorStops={[0, '#e8f4ff', 0.6, '#a8c8e0', 1, '#6090b0']}
+            opacity={0.9}
+          />
+          <Circle x={68} y={58} radius={22}
+            fill="#081828" opacity={0.85}
+          />
+
           {/* ── Distant city silhouette ── */}
-          {[60,150,230,330,430,600,690,790,940,1060,1140].map((bx, i) => (
+          {cityBg.map((b, i) => (
             <Rect key={i}
-              x={bx} y={GROUND_Y - 55 - (i * 19) % 75}
-              width={38 + (i * 13) % 55}
-              height={(i * 19) % 75}
-              fill="#07031a" opacity={0.55}
-              cornerRadius={[2,2,0,0]} />
+              x={b.x} y={GROUND_Y - b.h - 20}
+              width={b.w} height={b.h + 20}
+              fill="#060f1e" opacity={0.7}
+              cornerRadius={[3,3,0,0]}
+            />
           ))}
 
           {/* ── Ground ── */}
-          <Rect x={0} y={GROUND_Y} width={W} height={H - GROUND_Y}
+          <Rect x={0} y={GROUND_Y} width={W} height={H-GROUND_Y}
             fillLinearGradientStartPoint={{ x: 0, y: 0 }}
-            fillLinearGradientEndPoint={  { x: 0, y: H - GROUND_Y }}
-            fillLinearGradientColorStops={[0, '#0b0320', 1, '#060118']} />
+            fillLinearGradientEndPoint={{ x: 0, y: H-GROUND_Y }}
+            fillLinearGradientColorStops={[0, '#0d2030', 1, '#050d18']}
+          />
 
-          {/* Road surface strip */}
-          <Rect x={0} y={GROUND_Y - 14} width={W} height={22}
-            fill="#0e0825" opacity={0.9} />
-          {/* Sidewalk edge */}
-          <Rect x={0} y={GROUND_Y - 16} width={W} height={4}
-            fill="#1c0a40" opacity={0.55} />
+          {/* ── Pavement strip ── */}
+          <Rect x={0} y={GROUND_Y-16} width={W} height={24}
+            fill="#0a1828" opacity={0.95}
+          />
+          {/* Curb highlight */}
+          <Rect x={0} y={GROUND_Y-18} width={W} height={3}
+            fill="#1a3050" opacity={0.7}
+          />
 
           {/* ── Roads ── */}
           <Roads isActive={isActive} activeHubs={activeHubs} tick={tick} />
 
-          {/* ── Street lamps ── */}
-          {[215, 410, 660, 825, 1000].map((lx, i) => (
+          {/* ── Lamps ── */}
+          {[218, 408, 658, 822, 998].map((lx, i) => (
             <Lamp key={i} x={lx} isActive={isActive} />
           ))}
 
           {/* ── Trees ── */}
-          <Tree x={255}  s={0.95} />
-          <Tree x={315}  s={0.72} />
-          <Tree x={390}  s={0.88} />
-          <Tree x={680}  s={0.82} />
-          <Tree x={745}  s={1.05} />
-          <Tree x={808}  s={0.78} />
-
-          {/* ── Bushes ── */}
-          {[235, 275, 340, 695, 772].map((bx, i) => <Bush key={i} x={bx} />)}
+          <Tree x={258} s={0.95} />
+          <Tree x={318} s={0.70} />
+          <Tree x={388} s={0.85} />
+          <Tree x={682} s={0.80} />
+          <Tree x={748} s={1.05} />
+          <Tree x={810} s={0.78} />
 
           {/* ── Buildings ── */}
           <Building bldg={B.hub}      isActive={!isActive || hubAgents.length > 0}
-            agentCount={hubAgents.length}
-            onClick={() => setSelectedZone({ name: 'AGENT HUB',    agents: hubAgents })} />
-
-          <Building bldg={B.enquiry}  isActive={enquiryActive}
-            agentCount={Math.max(1, enquiryAgents.length)}
-            onClick={() => setSelectedZone({ name: 'ENQUIRY DEPT', agents: enquiryAgents })} />
-
+            agentCount={hubAgents.length} tick={tick}
+            onClick={() => setSelectedZone({ name: 'AGENT HUB',    color: B.hub.color,      agents: hubAgents })}
+          />
+          <Building bldg={B.enquiry}  isActive={true}
+            agentCount={Math.max(1, enquiryAgents.length)} tick={tick}
+            onClick={() => setSelectedZone({ name: 'ENQUIRY DEPT', color: B.enquiry.color,  agents: enquiryAgents })}
+          />
           <Building bldg={B.research} isActive={researchActive}
-            agentCount={researchAgents.length}
-            onClick={() => setSelectedZone({ name: 'RESEARCH LAB', agents: researchAgents })} />
-
+            agentCount={researchAgents.length} tick={tick}
+            onClick={() => setSelectedZone({ name: 'RESEARCH LAB', color: B.research.color, agents: researchAgents })}
+          />
           <Building bldg={B.dev}      isActive={devActive}
-            agentCount={devAgents.length}
-            onClick={() => setSelectedZone({ name: 'DEV HUB',      agents: devAgents })} />
+            agentCount={devAgents.length} tick={tick}
+            onClick={() => setSelectedZone({ name: 'DEV HUB',      color: B.dev.color,      agents: devAgents })}
+          />
 
+          {/* ── Router agent (always at Enquiry) ── */}
           <AgentNode
             x={B.enquiry.x + B.enquiry.w / 2}
             y={WALK_Y - 5}
             agent={{
-              id: 'router',
-              name: 'Router',
-              skill_level: 'expert',
+              id: 'router', name: 'Router', skill_level: 'expert',
               animationState: enquiryAgents.length > 0 ? 'working' : 'idle',
-              isMoving: false,
-              isWorking: true,
             }}
             tick={tick}
           />
 
-          {/* ── Store agents (hub idle + dispatched workers) ── */}
+          {/* ── Store agents ── */}
           {agents.map(agent => {
             const pos = positions[agent.id]
             if (!pos) return null
@@ -535,43 +681,61 @@ export default function SimulationWorld() {
         </Layer>
       </Stage>
 
-      {/* ── Zone detail overlay (HTML on top of canvas) ── */}
+      {/* ── Zone detail overlay ── */}
       {selectedZone && (
-        <div className="absolute inset-0 bg-black/65 backdrop-blur-sm z-40 flex items-end"
-          onClick={() => setSelectedZone(null)}>
-          <div className="w-full p-5 rounded-t-2xl border-t border-indigo-500/25"
-            style={{ background: '#0c0820' }}
-            onClick={e => e.stopPropagation()}>
-
+        <div className="absolute inset-0 z-40 flex items-end"
+          style={{ background: 'rgba(2,8,20,0.75)', backdropFilter: 'blur(6px)' }}
+          onClick={() => setSelectedZone(null)}
+        >
+          <div className="w-full p-5 rounded-t-2xl"
+            style={{
+              background: 'rgba(7,22,40,0.98)',
+              border: `1px solid ${selectedZone.color}30`,
+              borderBottom: 'none',
+              boxShadow: `0 -8px 40px ${selectedZone.color}15`,
+            }}
+            onClick={e => e.stopPropagation()}
+          >
             <div className="flex justify-between items-start mb-4">
               <div>
-                <div className="text-[10px] tracking-[0.35em] text-indigo-400/60 mb-1">ZONE DETAIL</div>
-                <div className="text-white font-black text-lg tracking-wider">{selectedZone.name}</div>
-                <div className="text-indigo-400/50 text-xs mt-0.5">
+                <div className="text-xs tracking-widest mb-1" style={{ color: selectedZone.color, opacity: 0.7 }}>
+                  ZONE DETAIL
+                </div>
+                <div className="text-white font-bold text-lg tracking-wider" style={{ fontFamily: '"Syne", sans-serif' }}>
+                  {selectedZone.name}
+                </div>
+                <div className="text-xs mt-0.5" style={{ color: selectedZone.color, opacity: 0.5 }}>
                   {selectedZone.agents.length} agent{selectedZone.agents.length !== 1 ? 's' : ''} present
                 </div>
               </div>
               <button onClick={() => setSelectedZone(null)}
-                className="text-indigo-400/60 hover:text-white text-lg">✕</button>
+                className="text-sm transition-opacity hover:opacity-100 opacity-40"
+                style={{ color: selectedZone.color }}
+              >✕ CLOSE</button>
             </div>
 
             {selectedZone.agents.length === 0 ? (
-              <div className="text-indigo-400/35 text-sm text-center py-5">No agents in this zone</div>
+              <div className="text-center py-6 text-sm" style={{ color: '#3d6080' }}>
+                No agents currently in this zone
+              </div>
             ) : (
-              <div className="flex gap-5 overflow-x-auto pb-2">
+              <div className="flex gap-4 overflow-x-auto pb-2">
                 {selectedZone.agents.map(agent => {
-                  const c = SKILL_COLOR[agent.skill_level] || '#4f46e5'
+                  const c = SKILL_COLOR[agent.skill_level] || '#06b6d4'
                   return (
-                    <div key={agent.id} className="flex flex-col items-center gap-2 flex-shrink-0 min-w-[76px]">
-                      <div className="w-13 h-13 rounded-xl flex items-center justify-center text-2xl w-14 h-14"
-                        style={{ background: `${c}12`, border: `1px solid ${c}30` }}>🤖</div>
+                    <div key={agent.id} className="flex flex-col items-center gap-2 flex-shrink-0 min-w-[80px]">
+                      <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl"
+                        style={{ background: `${c}10`, border: `1px solid ${c}30` }}>
+                        🤖
+                      </div>
                       <div className="text-center">
                         <div className="text-xs text-white font-semibold">{agent.name?.split(' ')[0]}</div>
-                        <div className="text-[10px] text-indigo-400/65">{agent.role}</div>
-                        <div className="mt-1 text-[9px] px-2 py-0.5 rounded-full inline-block"
+                        <div className="text-xs mt-0.5" style={{ color: '#5a7a9a' }}>{agent.role}</div>
+                        <div className="mt-1 text-xs px-2 py-0.5 rounded-full inline-block"
                           style={{
-                            background: agent.animationState === 'working' ? '#34d39918' : `${c}18`,
-                            color:      agent.animationState === 'working' ? '#34d399'   : c,
+                            background: agent.animationState === 'working' ? '#10b98118' : `${c}18`,
+                            color:      agent.animationState === 'working' ? '#10b981'   : c,
+                            border: `1px solid ${agent.animationState === 'working' ? '#10b98130' : `${c}30`}`,
                           }}>
                           {agent.animationState}
                         </div>

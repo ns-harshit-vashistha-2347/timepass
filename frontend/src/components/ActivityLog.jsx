@@ -6,24 +6,32 @@ export default function ActivityLog() {
 
   return (
     <div className="p-4">
-      <div className="mb-4">
-        <div className="text-xs text-indigo-500/60 uppercase tracking-widest mb-1">System</div>
-        <h2 className="text-indigo-400 text-sm font-bold tracking-wider">ACTIVITY LOG</h2>
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-slow" />
+        <span className="text-xs font-bold tracking-widest" style={{ color: '#3d6080', fontFamily: '"JetBrains Mono", monospace' }}>
+          SYSTEM LOG
+        </span>
       </div>
-      <div className="space-y-2">
+
+      <div className="space-y-1.5">
         {activityLog.map((entry, i) => (
-          <div key={entry.id} className="text-xs border-l-2 border-indigo-500/20 pl-3 py-1">
-            <div className="text-indigo-500/50 mb-0.5">{entry.time}</div>
-            {/* Typewriter only on the latest entry */}
+          <div key={entry.id} className="flex gap-2 text-xs"
+            style={{ borderLeft: `2px solid ${i === 0 ? 'rgba(6,182,212,0.4)' : 'rgba(26,58,92,0.4)'}`, paddingLeft: 8 }}>
+            <span className="flex-shrink-0 opacity-40" style={{ color: '#5a7a9a', fontFamily: '"JetBrains Mono", monospace', fontSize: 10 }}>
+              {entry.time}
+            </span>
             {i === 0 ? (
               <TypeAnimation
                 sequence={[entry.message]}
-                speed={80}
+                speed={85}
                 cursor={false}
-                className="text-indigo-200/80 leading-relaxed"
+                className="leading-relaxed"
+                style={{ color: '#7aa3c4', fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}
               />
             ) : (
-              <div className="text-indigo-200/60 leading-relaxed">{entry.message}</div>
+              <span className="leading-relaxed" style={{ color: '#3d6080', fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>
+                {entry.message}
+              </span>
             )}
           </div>
         ))}
