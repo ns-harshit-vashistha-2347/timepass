@@ -17,3 +17,8 @@ websockets
 pydantic-settings
 ddgs
 arxiv
+chromadb
+sentence-transformers
+rank-bm25
+pdfplumber
+python-docx

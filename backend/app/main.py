@@ -1,6 +1,10 @@
 """
-Main entry point for the Cyber Hub backend.
-Tables are created on startup; all routes are registered here.
+MODIFIED FILE: app/main.py
+Changes:
+  1. Import rag_router from app.api.routes.rag
+  2. Import app.models.rag_session  (so SQLAlchemy registers the tables)
+  3. Register rag_router with app.include_router()
+  4. Updated the root endpoint to list the RAG hub
 """
 
 from contextlib import asynccontextmanager
@@ -13,7 +17,8 @@ from app.api.routes.research  import router as research_router
 from app.api.routes.hub       import router as hub_router
 from app.api.routes.developer import router as developer_router
 from app.api.routes.enquiry   import router as enquiry_router
-from app.api.routes.collab import router as collab_router
+from app.api.routes.collab    import router as collab_router
+from app.api.routes.rag       import router as rag_router          # ← NEW
 
 
 # Import all models so SQLAlchemy registers them before create_all
@@ -24,6 +29,7 @@ import app.models.agent_request
 import app.models.dev_session
 import app.models.enquiry_session
 import app.models.collab_request
+import app.models.rag_session                                       # ← NEW
 
 
 @asynccontextmanager
@@ -39,9 +45,10 @@ app = FastAPI(
     title="Cyber Hub API",
     description=(
         "Multi-agent simulation platform — "
-        "Enquiry Department → Research Hub & Developer Hub (via Agent Hub)"
+        "Enquiry Department → Research Hub & Developer Hub (via Agent Hub). "
+        "Plus RAG Master Hub for document Q&A."
     ),
-    version="0.2.0",
+    version="0.3.0",
     lifespan=lifespan,
 )
 
@@ -58,7 +65,8 @@ app.include_router(enquiry_router)    # smart front-door
 app.include_router(research_router)   # direct research access
 app.include_router(developer_router)  # direct developer access
 app.include_router(hub_router)        # agent hub management
-app.include_router(collab_router)    # collaboration requests between hubs
+app.include_router(collab_router)     # inter-hub collaboration
+app.include_router(rag_router)        # RAG Master Hub ← NEW
 
 
 @app.get("/")
@@ -66,8 +74,14 @@ async def root():
     return {
         "status":  "online",
         "message": "Welcome to Cyber Hub 🤖",
-        "areas":   ["Enquiry Department", "Research Hub", "Developer Hub", "Agent Hub"],
-        "docs":    "/docs",
+        "areas":   [
+            "Enquiry Department",
+            "Research Hub",
+            "Developer Hub",
+            "Agent Hub",
+            "RAG Master Hub",           # ← NEW
+        ],
+        "docs": "/docs",
     }
 
 
