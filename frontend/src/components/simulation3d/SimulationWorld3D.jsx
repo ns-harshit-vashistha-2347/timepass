@@ -356,7 +356,6 @@ function Building3D({ config, isActive, agentCount, onClick }) {
           anchorX="center"
           anchorY="middle"
           letterSpacing={0.12}
-          font="/fonts/JetBrainsMono-Bold.woff2"
           outlineColor={color}
           outlineWidth={isActive ? 0.012 : 0}
         >
