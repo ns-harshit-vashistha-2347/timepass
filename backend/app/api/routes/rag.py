@@ -1,21 +1,3 @@
-"""
-RAG Master Hub — FastAPI Routes
-
-Endpoints:
-  POST   /rag/sessions                              → create a new RAG workspace
-  GET    /rag/sessions/user/{user_id}               → list all sessions for a user
-  GET    /rag/sessions/{session_id}                 → get session info
-  DELETE /rag/sessions/{session_id}                 → archive a session
-
-  POST   /rag/sessions/{session_id}/upload          → upload one or more documents
-  GET    /rag/sessions/{session_id}/documents       → list indexed documents
-  GET    /rag/sessions/{session_id}/documents/{doc_id} → document status
-  DELETE /rag/sessions/{session_id}/documents/{doc_id} → remove document
-
-  POST   /rag/sessions/{session_id}/chat            → ask a question (returns answer + metrics)
-  GET    /rag/sessions/{session_id}/messages        → full chat history
-"""
-
 import uuid
 import asyncio
 import logging
@@ -43,13 +25,10 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/rag", tags=["RAG Master Hub"])
 
-# Allowed file types
 ALLOWED_EXTENSIONS = {"pdf", "docx", "doc", "md", "markdown", "txt"}
 MAX_FILE_SIZE_MB   = 50
 
-
-# ── Helper ─────────────────────────────────────────────────────────────────
-
+# get the extension of a filename
 def _file_extension(filename: str) -> str:
     return Path(filename).suffix.lstrip(".").lower()
 
